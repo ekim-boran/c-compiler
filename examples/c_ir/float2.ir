@@ -1,0 +1,30 @@
+var f64 @a = 1.6238255500793457
+var f64 @b = 0.9753980040550232
+var f64 @c = 0.6864385604858398
+var f64 @d = 0.4075777530670166
+fun f32 @func_67 () {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:i0:f64 = load @a:f64*
+  %b0:i1:f64 = load @b:f64*
+  %b0:i2:f64 = add %b0:i0:f64 %b0:i1:f64
+  %b0:i3:f64 = load @c:f64*
+  %b0:i4:f64 = add %b0:i2:f64 %b0:i3:f64
+  %b0:i5:f64 = load @d:f64*
+  %b0:i6:f64 = add %b0:i4:f64 %b0:i5:f64
+  %b0:i7:f32 = typecast %b0:i6:f64 to f32
+  ret %b0:i7:f32
+}
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:i0:f32 = call @func_67:[ret:f32 params:()]*()
+  %b0:i1:f32 = typecast 1000:i32 to f32
+  %b0:i2:f32 = mul %b0:i0:f32 %b0:i1:f32
+  %b0:i3:i32 = typecast %b0:i2:f32 to i32
+  ret %b0:i3:i32
+}

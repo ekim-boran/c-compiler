@@ -1,0 +1,8 @@
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:i0:i32 = typecast 1:u1 to i32
+  ret %b0:i0:i32
+}

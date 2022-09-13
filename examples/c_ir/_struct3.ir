@@ -1,0 +1,63 @@
+struct Big : { m1:struct Sub, m2:struct Sub, m3:struct Sub }
+struct Sub : { m1:i64, m2:i64, m3:i64, m4:i64 }
+fun unit @foo (struct Big*, struct Big*) {
+init:
+  bid: b0
+  allocations:
+    %l0:struct Big:p1
+    %l1:struct Big:r
+block b0:
+  %b0:p0:struct Big*:p1
+  %b0:p1:struct Big*
+  %b0:i0:unit = call @memcpy:[ret:unit params:(struct Big*, struct Big*, i32)]*(%l0:struct Big*, %b0:p0:struct Big*, 96:i32)
+  %b0:i1:unit = call @memcpy:[ret:unit params:(struct Big*, struct Big*, i32)]*(%l1:struct Big*, %l0:struct Big*, 96:i32)
+  %b0:i2:struct Sub* = getelementptr %l1:struct Big* offset 0:i64
+  %b0:i3:i64* = getelementptr %b0:i2:struct Sub* offset 0:i64
+  %b0:i4:unit = store 10:i64 %b0:i3:i64*
+  %b0:i5:unit = call @memcpy:[ret:unit params:(struct Big*, struct Big*, i32)]*(%b0:p1:struct Big*, %l1:struct Big*, 96:i32)
+  ret unit:unit
+}
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+    %l0:struct Big:a
+    %l1:struct Big:r
+    %l2:struct Big:t2
+block b0:
+  %b0:i0:struct Sub* = getelementptr %l0:struct Big* offset 0:i64
+  %b0:i1:i64* = getelementptr %b0:i0:struct Sub* offset 0:i64
+  %b0:i2:unit = store 1:i64 %b0:i1:i64*
+  %b0:i3:i64* = getelementptr %b0:i0:struct Sub* offset 8:i64
+  %b0:i4:unit = store 2:i64 %b0:i3:i64*
+  %b0:i5:i64* = getelementptr %b0:i0:struct Sub* offset 16:i64
+  %b0:i6:unit = store 3:i64 %b0:i5:i64*
+  %b0:i7:i64* = getelementptr %b0:i0:struct Sub* offset 24:i64
+  %b0:i8:unit = store 4:i64 %b0:i7:i64*
+  %b0:i9:struct Sub* = getelementptr %l0:struct Big* offset 32:i64
+  %b0:i10:i64* = getelementptr %b0:i9:struct Sub* offset 0:i64
+  %b0:i11:unit = store 2:i64 %b0:i10:i64*
+  %b0:i12:i64* = getelementptr %b0:i9:struct Sub* offset 8:i64
+  %b0:i13:unit = store 3:i64 %b0:i12:i64*
+  %b0:i14:i64* = getelementptr %b0:i9:struct Sub* offset 16:i64
+  %b0:i15:unit = store 4:i64 %b0:i14:i64*
+  %b0:i16:i64* = getelementptr %b0:i9:struct Sub* offset 24:i64
+  %b0:i17:unit = store 5:i64 %b0:i16:i64*
+  %b0:i18:struct Sub* = getelementptr %l0:struct Big* offset 64:i64
+  %b0:i19:i64* = getelementptr %b0:i18:struct Sub* offset 0:i64
+  %b0:i20:unit = store 3:i64 %b0:i19:i64*
+  %b0:i21:i64* = getelementptr %b0:i18:struct Sub* offset 8:i64
+  %b0:i22:unit = store 4:i64 %b0:i21:i64*
+  %b0:i23:i64* = getelementptr %b0:i18:struct Sub* offset 16:i64
+  %b0:i24:unit = store 5:i64 %b0:i23:i64*
+  %b0:i25:i64* = getelementptr %b0:i18:struct Sub* offset 24:i64
+  %b0:i26:unit = store 6:i64 %b0:i25:i64*
+  %b0:i27:unit = call @foo:[ret:unit params:(struct Big*, struct Big*)]*(%l0:struct Big*, %l2:struct Big*)
+  %b0:i28:unit = call @memcpy:[ret:unit params:(struct Big*, struct Big*, i32)]*(%l1:struct Big*, %l2:struct Big*, 96:i32)
+  %b0:i29:struct Sub* = getelementptr %l1:struct Big* offset 0:i64
+  %b0:i30:i64* = getelementptr %b0:i29:struct Sub* offset 0:i64
+  %b0:i31:i64 = load %b0:i30:i64*
+  %b0:i32:u1 = cmp eq %b0:i31:i64 10:i64
+  %b0:i33:i32 = typecast %b0:i32:u1 to i32
+  ret %b0:i33:i32
+}

@@ -1,0 +1,221 @@
+struct %t0 : { a:i32, b:i32 }
+struct %t1 : { a:i64, b:i64, c:i64, d:i64, e:i64, f:i64, g:i64, h:i64 }
+struct %t2 : { a:i64, b:f32 }
+struct %t3 : { a:i64, b:f32, c:i64, d:f64, e:i64, f:i64, g:i64, h:f64, i:i64, j:i64, k:i64, l:f64 }
+fun i32 @exotic_arguments_struct_small (struct %t0*, i32) {
+init:
+  bid: b0
+  allocations:
+    %l0:struct %t0:a
+block b0:
+  %b0:p0:struct %t0*:a
+  %b0:p1:i32:nonce
+  %b0:i0:unit = call @memcpy:[ret:unit params:(struct %t0*, struct %t0*, i32)]*(%l0:struct %t0*, %b0:p0:struct %t0*, 8:i32)
+  %b0:i1:i32* = getelementptr %l0:struct %t0* offset 0:i64
+  %b0:i2:i32 = load %b0:i1:i32*
+  %b0:i3:i32* = getelementptr %l0:struct %t0* offset 4:i64
+  %b0:i4:i32 = load %b0:i3:i32*
+  %b0:i5:i32 = add %b0:i2:i32 %b0:i4:i32
+  %b0:i6:i32 = add %b0:i5:i32 %b0:p1:i32
+  ret %b0:i6:i32
+}
+fun i64 @exotic_arguments_struct_large (struct %t1*, i32) {
+init:
+  bid: b0
+  allocations:
+    %l0:struct %t1:a
+block b0:
+  %b0:p0:struct %t1*:a
+  %b0:p1:i32:nonce
+  %b0:i0:unit = call @memcpy:[ret:unit params:(struct %t1*, struct %t1*, i32)]*(%l0:struct %t1*, %b0:p0:struct %t1*, 64:i32)
+  %b0:i1:i64* = getelementptr %l0:struct %t1* offset 0:i64
+  %b0:i2:i64 = load %b0:i1:i64*
+  %b0:i3:i64* = getelementptr %l0:struct %t1* offset 8:i64
+  %b0:i4:i64 = load %b0:i3:i64*
+  %b0:i5:i64 = add %b0:i2:i64 %b0:i4:i64
+  %b0:i6:i64* = getelementptr %l0:struct %t1* offset 16:i64
+  %b0:i7:i64 = load %b0:i6:i64*
+  %b0:i8:i64 = add %b0:i5:i64 %b0:i7:i64
+  %b0:i9:i64* = getelementptr %l0:struct %t1* offset 24:i64
+  %b0:i10:i64 = load %b0:i9:i64*
+  %b0:i11:i64 = add %b0:i8:i64 %b0:i10:i64
+  %b0:i12:i64* = getelementptr %l0:struct %t1* offset 32:i64
+  %b0:i13:i64 = load %b0:i12:i64*
+  %b0:i14:i64 = add %b0:i11:i64 %b0:i13:i64
+  %b0:i15:i64* = getelementptr %l0:struct %t1* offset 40:i64
+  %b0:i16:i64 = load %b0:i15:i64*
+  %b0:i17:i64 = add %b0:i14:i64 %b0:i16:i64
+  %b0:i18:i64* = getelementptr %l0:struct %t1* offset 48:i64
+  %b0:i19:i64 = load %b0:i18:i64*
+  %b0:i20:i64 = add %b0:i17:i64 %b0:i19:i64
+  %b0:i21:i64* = getelementptr %l0:struct %t1* offset 56:i64
+  %b0:i22:i64 = load %b0:i21:i64*
+  %b0:i23:i64 = add %b0:i20:i64 %b0:i22:i64
+  %b0:i24:i64 = typecast %b0:p1:i32 to i64
+  %b0:i25:i64 = add %b0:i23:i64 %b0:i24:i64
+  ret %b0:i25:i64
+}
+fun f32 @exotic_arguments_struct_small_ugly (struct %t2*, i32) {
+init:
+  bid: b0
+  allocations:
+    %l0:struct %t2:a
+block b0:
+  %b0:p0:struct %t2*:a
+  %b0:p1:i32:nonce
+  %b0:i0:unit = call @memcpy:[ret:unit params:(struct %t2*, struct %t2*, i32)]*(%l0:struct %t2*, %b0:p0:struct %t2*, 12:i32)
+  %b0:i1:i64* = getelementptr %l0:struct %t2* offset 0:i64
+  %b0:i2:i64 = load %b0:i1:i64*
+  %b0:i3:f32 = typecast %b0:i2:i64 to f32
+  %b0:i4:f32 = add 0.0:f32 %b0:i3:f32
+  %b0:i5:f32* = getelementptr %l0:struct %t2* offset 8:i64
+  %b0:i6:f32 = load %b0:i5:f32*
+  %b0:i7:f32 = add %b0:i4:f32 %b0:i6:f32
+  %b0:i8:f32 = typecast %b0:p1:i32 to f32
+  %b0:i9:f32 = add %b0:i7:f32 %b0:i8:f32
+  ret %b0:i9:f32
+}
+fun f64 @exotic_arguments_struct_large_ugly (struct %t3*, i32) {
+init:
+  bid: b0
+  allocations:
+    %l0:struct %t3:a
+block b0:
+  %b0:p0:struct %t3*:a
+  %b0:p1:i32:nonce
+  %b0:i0:unit = call @memcpy:[ret:unit params:(struct %t3*, struct %t3*, i32)]*(%l0:struct %t3*, %b0:p0:struct %t3*, 96:i32)
+  %b0:i1:i64* = getelementptr %l0:struct %t3* offset 0:i64
+  %b0:i2:i64 = load %b0:i1:i64*
+  %b0:i3:f64 = typecast %b0:i2:i64 to f64
+  %b0:i4:f64 = add 0.0:f64 %b0:i3:f64
+  %b0:i5:f32* = getelementptr %l0:struct %t3* offset 8:i64
+  %b0:i6:f32 = load %b0:i5:f32*
+  %b0:i7:f64 = typecast %b0:i6:f32 to f64
+  %b0:i8:f64 = add %b0:i4:f64 %b0:i7:f64
+  %b0:i9:i64* = getelementptr %l0:struct %t3* offset 16:i64
+  %b0:i10:i64 = load %b0:i9:i64*
+  %b0:i11:f64 = typecast %b0:i10:i64 to f64
+  %b0:i12:f64 = add %b0:i8:f64 %b0:i11:f64
+  %b0:i13:f64* = getelementptr %l0:struct %t3* offset 24:i64
+  %b0:i14:f64 = load %b0:i13:f64*
+  %b0:i15:f64 = add %b0:i12:f64 %b0:i14:f64
+  %b0:i16:i64* = getelementptr %l0:struct %t3* offset 32:i64
+  %b0:i17:i64 = load %b0:i16:i64*
+  %b0:i18:f64 = typecast %b0:i17:i64 to f64
+  %b0:i19:f64 = add %b0:i15:f64 %b0:i18:f64
+  %b0:i20:i64* = getelementptr %l0:struct %t3* offset 40:i64
+  %b0:i21:i64 = load %b0:i20:i64*
+  %b0:i22:f64 = typecast %b0:i21:i64 to f64
+  %b0:i23:f64 = add %b0:i19:f64 %b0:i22:f64
+  %b0:i24:i64* = getelementptr %l0:struct %t3* offset 48:i64
+  %b0:i25:i64 = load %b0:i24:i64*
+  %b0:i26:f64 = typecast %b0:i25:i64 to f64
+  %b0:i27:f64 = add %b0:i23:f64 %b0:i26:f64
+  %b0:i28:f64* = getelementptr %l0:struct %t3* offset 56:i64
+  %b0:i29:f64 = load %b0:i28:f64*
+  %b0:i30:f64 = add %b0:i27:f64 %b0:i29:f64
+  %b0:i31:f64 = typecast %b0:p1:i32 to f64
+  %b0:i32:f64 = add %b0:i30:f64 %b0:i31:f64
+  ret %b0:i32:f64
+}
+fun f32 @exotic_arguments_float (f32, i32) {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:p0:f32:a
+  %b0:p1:i32:nonce
+  %b0:i0:f32 = typecast %b0:p1:i32 to f32
+  %b0:i1:f32 = add %b0:p0:f32 %b0:i0:f32
+  ret %b0:i1:f32
+}
+fun f64 @exotic_arguments_double (f64, i32) {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:p0:f64:a
+  %b0:p1:i32:nonce
+  %b0:i0:f64 = typecast %b0:p1:i32 to f64
+  %b0:i1:f64 = add %b0:p0:f64 %b0:i0:f64
+  ret %b0:i1:f64
+}
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+    %l0:struct %t0:s
+    %l1:struct %t1:l
+    %l2:struct %t2:su
+    %l3:struct %t3:lu
+block b0:
+  %b0:i0:i32* = getelementptr %l0:struct %t0* offset 0:i64
+  %b0:i1:unit = store 3:i32 %b0:i0:i32*
+  %b0:i2:i32* = getelementptr %l0:struct %t0* offset 4:i64
+  %b0:i3:unit = store 4:i32 %b0:i2:i32*
+  %b0:i4:i64* = getelementptr %l1:struct %t1* offset 0:i64
+  %b0:i5:unit = store 5:i64 %b0:i4:i64*
+  %b0:i6:i64* = getelementptr %l1:struct %t1* offset 8:i64
+  %b0:i7:unit = store 6:i64 %b0:i6:i64*
+  %b0:i8:i64* = getelementptr %l1:struct %t1* offset 16:i64
+  %b0:i9:unit = store 7:i64 %b0:i8:i64*
+  %b0:i10:i64* = getelementptr %l1:struct %t1* offset 24:i64
+  %b0:i11:unit = store 8:i64 %b0:i10:i64*
+  %b0:i12:i64* = getelementptr %l1:struct %t1* offset 32:i64
+  %b0:i13:unit = store 9:i64 %b0:i12:i64*
+  %b0:i14:i64* = getelementptr %l1:struct %t1* offset 40:i64
+  %b0:i15:unit = store 10:i64 %b0:i14:i64*
+  %b0:i16:i64* = getelementptr %l1:struct %t1* offset 48:i64
+  %b0:i17:unit = store 11:i64 %b0:i16:i64*
+  %b0:i18:i64* = getelementptr %l1:struct %t1* offset 56:i64
+  %b0:i19:unit = store 12:i64 %b0:i18:i64*
+  %b0:i20:i64* = getelementptr %l2:struct %t2* offset 0:i64
+  %b0:i21:unit = store 5:i64 %b0:i20:i64*
+  %b0:i22:f32* = getelementptr %l2:struct %t2* offset 8:i64
+  %b0:i23:unit = store 6.0:f32 %b0:i22:f32*
+  %b0:i24:i64* = getelementptr %l3:struct %t3* offset 0:i64
+  %b0:i25:unit = store 5:i64 %b0:i24:i64*
+  %b0:i26:f32* = getelementptr %l3:struct %t3* offset 8:i64
+  %b0:i27:unit = store 6.0:f32 %b0:i26:f32*
+  %b0:i28:i64* = getelementptr %l3:struct %t3* offset 16:i64
+  %b0:i29:unit = store 7:i64 %b0:i28:i64*
+  %b0:i30:f64* = getelementptr %l3:struct %t3* offset 24:i64
+  %b0:i31:unit = store 8.0:f64 %b0:i30:f64*
+  %b0:i32:i64* = getelementptr %l3:struct %t3* offset 32:i64
+  %b0:i33:unit = store 9:i64 %b0:i32:i64*
+  %b0:i34:i64* = getelementptr %l3:struct %t3* offset 40:i64
+  %b0:i35:unit = store 10:i64 %b0:i34:i64*
+  %b0:i36:i64* = getelementptr %l3:struct %t3* offset 48:i64
+  %b0:i37:unit = store 11:i64 %b0:i36:i64*
+  %b0:i38:f64* = getelementptr %l3:struct %t3* offset 56:i64
+  %b0:i39:unit = store 12.0:f64 %b0:i38:f64*
+  %b0:i40:i64* = getelementptr %l3:struct %t3* offset 64:i64
+  %b0:i41:unit = store 13:i64 %b0:i40:i64*
+  %b0:i42:i64* = getelementptr %l3:struct %t3* offset 72:i64
+  %b0:i43:unit = store 14:i64 %b0:i42:i64*
+  %b0:i44:i64* = getelementptr %l3:struct %t3* offset 80:i64
+  %b0:i45:unit = store 15:i64 %b0:i44:i64*
+  %b0:i46:f64* = getelementptr %l3:struct %t3* offset 88:i64
+  %b0:i47:unit = store 16.0:f64 %b0:i46:f64*
+  %b0:i48:i32 = call @exotic_arguments_struct_small:[ret:i32 params:(struct %t0*, i32)]*(%l0:struct %t0*, 12:i32)
+  %b0:i49:i64 = call @exotic_arguments_struct_large:[ret:i64 params:(struct %t1*, i32)]*(%l1:struct %t1*, 11:i32)
+  %b0:i50:i32 = typecast %b0:i49:i64 to i32
+  %b0:i51:f32 = call @exotic_arguments_struct_small_ugly:[ret:f32 params:(struct %t2*, i32)]*(%l2:struct %t2*, 112:i32)
+  %b0:i52:f64 = call @exotic_arguments_struct_large_ugly:[ret:f64 params:(struct %t3*, i32)]*(%l3:struct %t3*, 333:i32)
+  %b0:i53:f32 = typecast 11:i32 to f32
+  %b0:i54:f32 = call @exotic_arguments_float:[ret:f32 params:(f32, i32)]*(%b0:i53:f32, 12:i32)
+  %b0:i55:f64 = typecast 22:i32 to f64
+  %b0:i56:f64 = call @exotic_arguments_double:[ret:f64 params:(f64, i32)]*(%b0:i55:f64, 11:i32)
+  %b0:i57:i32 = add %b0:i48:i32 %b0:i50:i32
+  %b0:i58:f64 = typecast %b0:i57:i32 to f64
+  %b0:i59:f32 = add %b0:i51:f32 %b0:i54:f32
+  %b0:i60:f64 = typecast %b0:i59:f32 to f64
+  %b0:i61:i32 = typecast %b0:i60:f64 to i32
+  %b0:i62:f32 = typecast %b0:i61:i32 to f32
+  %b0:i63:f32 = add %b0:i62:f32 %b0:i54:f32
+  %b0:i64:f64 = typecast %b0:i63:f32 to f64
+  %b0:i65:f64 = add %b0:i64:f64 %b0:i56:f64
+  %b0:i66:f64 = add %b0:i58:f64 %b0:i65:f64
+  %b0:i67:i32 = typecast %b0:i66:f64 to i32
+  ret %b0:i67:i32
+}

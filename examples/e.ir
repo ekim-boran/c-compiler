@@ -1,0 +1,20 @@
+fun i32 @memcpy (struct %t0*, struct %t0*, i32) {
+init:
+  bid: b0
+  allocations:
+    %l0:struct %t0*:a1
+    %l1:struct %t0*:a2
+    %l2:i32:size
+block b0:
+  %b0:p0:struct %t0*:a1
+  %b0:p1:struct %t0*:a2
+  %b0:p2:i32:size
+  %b0:i0:unit = store %b0:p0:struct %t0* %l0:struct %t0**
+  %b0:i1:unit = store %b0:p1:struct %t0* %l1:struct %t0**
+  %b0:i2:unit = store %b0:p2:i32 %l2:i32*
+  %b0:i3:struct %t0* = load %l0:struct %t0**
+  %b0:i4:struct %t0* = load %l1:struct %t0**
+  %b0:i5:struct %t0 = load %b0:i4:struct %t0*
+  %b0:i6:unit = store %b0:i5:struct %t0 %b0:i3:struct %t0*
+  ret undef:i32
+}

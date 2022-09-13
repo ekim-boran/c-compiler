@@ -1,0 +1,226 @@
+var [2000 x i32] @graph_dijkstra_dist
+var [2000 x i32] @graph_dijkstra_visited
+var [2000 x [2000 x i32]] @graph_weight
+fun unit @graph_weight_init (i32, i32, i32*, [2000 x i32]*) {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:p0:i32:n
+  %b0:p1:i32:nonce
+  %b0:p2:i32*:x
+  %b0:p3:[2000 x i32]*:weight
+  %b0:i0:i32 = add %b0:p1:i32 1:i32
+  j b2(0:i32)
+block b2:
+  %b2:p0:i32:i
+  %b2:i0:u1 = cmp lt %b2:p0:i32 %b0:p0:i32
+  br %b2:i0:u1, b3(), b5()
+block b3:
+  %b3:i0:i64 = typecast %b2:p0:i32 to i64
+  %b3:i1:i64 = mul %b3:i0:i64 8000:i64
+  %b3:i2:[2000 x i32]* = getelementptr %b0:p3:[2000 x i32]* offset %b3:i1:i64
+  %b3:i3:i32* = getelementptr %b3:i2:[2000 x i32]* offset 0:i32
+  %b3:i4:i64 = mul %b3:i0:i64 4:i64
+  %b3:i5:i32* = getelementptr %b3:i3:i32* offset %b3:i4:i64
+  %b3:i6:unit = store 0:i32 %b3:i5:i32*
+  j b7(1:i32)
+block b5:
+  ret unit:unit
+block b7:
+  %b7:p0:i32:j
+  %b7:i0:u1 = cmp lt %b7:p0:i32 %b0:p0:i32
+  br %b7:i0:u1, b8(), b10()
+block b8:
+  %b8:i0:i32 = add %b2:p0:i32 %b7:p0:i32
+  %b8:i1:i32 = mod %b8:i0:i32 %b0:p0:i32
+  %b8:i2:i64 = typecast %b8:i1:i32 to i64
+  %b8:i3:i64 = mul %b8:i2:i64 4:i64
+  %b8:i4:i32* = getelementptr %b3:i3:i32* offset %b8:i3:i64
+  %b8:i5:i32 = load %b0:p2:i32*
+  %b8:i6:i32 = add %b8:i5:i32 1:i32
+  %b8:i7:unit = store %b8:i6:i32 %b0:p2:i32*
+  %b8:i8:unit = store %b8:i6:i32 %b8:i4:i32*
+  %b8:i9:i32 = load %b0:p2:i32*
+  %b8:i10:i32 = mod %b8:i9:i32 %b0:i0:i32
+  %b8:i11:u1 = cmp ne %b8:i10:i32 0:i32
+  br %b8:i11:u1, b11(), b13()
+block b10:
+  %b10:i0:i32 = add %b2:p0:i32 1:i32
+  j b2(%b10:i0:i32)
+block b11:
+  %b11:i0:i32 = load %b0:p2:i32*
+  %b11:i1:i32 = add %b11:i0:i32 1:i32
+  %b11:i2:unit = store %b11:i1:i32 %b0:p2:i32*
+  j b13()
+block b13:
+  %b13:i0:i32 = add %b7:p0:i32 1:i32
+  j b7(%b13:i0:i32)
+}
+fun i32 @graph_dijkstra (i32, i32) {
+init:
+  bid: b0
+  allocations:
+    %l0:i32:x
+block b0:
+  %b0:p0:i32:n
+  %b0:p1:i32:nonce
+  %b0:i0:u1 = cmp le %b0:p0:i32 2000:i32
+  %b0:i1:u1 = negate %b0:i0:u1
+  br %b0:i1:u1, b1(), b2()
+block b1:
+  ret %b0:p1:i32
+block b2:
+  %b2:i0:unit = store 0:i32 %l0:i32*
+  %b2:i1:[2000 x i32]* = getelementptr @graph_weight:[2000 x [2000 x i32]]* offset 0:i32
+  %b2:i2:unit = call @graph_weight_init:[ret:unit params:(i32, i32, i32*, [2000 x i32]*)]*(%b0:p0:i32, %b0:p1:i32, %l0:i32*, %b2:i1:[2000 x i32]*)
+  %b2:i3:i32 = minus 1:i32
+  j b5(0:i32)
+block b3:
+  %b3:i0:i64 = typecast %b15:p0:i32 to i64
+  %b3:i1:i64 = mul %b3:i0:i64 4:i64
+  %b3:i2:i32* = getelementptr %b8:i0:i32* offset %b3:i1:i64
+  %b3:i3:i64 = mul %b3:i0:i64 8000:i64
+  %b3:i4:[2000 x i32]* = getelementptr %b2:i1:[2000 x i32]* offset %b3:i3:i64
+  %b3:i5:i32* = getelementptr %b3:i4:[2000 x i32]* offset 0:i32
+  %b3:i6:i32 = load %b3:i2:i32*
+  %b3:i7:i32* = getelementptr @graph_dijkstra_visited:[2000 x i32]* offset 0:i32
+  %b3:i8:i32* = getelementptr %b3:i7:i32* offset %b3:i1:i64
+  %b3:i9:unit = store 1:i32 %b3:i8:i32*
+  j b35(0:i32)
+block b5:
+  %b5:p0:i32:i
+  %b5:i0:u1 = cmp lt %b5:p0:i32 %b0:p0:i32
+  br %b5:i0:u1, b6(), b8()
+block b6:
+  %b6:i0:i32* = getelementptr @graph_dijkstra_dist:[2000 x i32]* offset 0:i32
+  %b6:i1:i64 = typecast %b5:p0:i32 to i64
+  %b6:i2:i64 = mul %b6:i1:i64 4:i64
+  %b6:i3:i32* = getelementptr %b6:i0:i32* offset %b6:i2:i64
+  %b6:i4:unit = store %b2:i3:i32 %b6:i3:i32*
+  %b6:i5:i32* = getelementptr @graph_dijkstra_visited:[2000 x i32]* offset 0:i32
+  %b6:i6:i32* = getelementptr %b6:i5:i32* offset %b6:i2:i64
+  %b6:i7:unit = store 0:i32 %b6:i6:i32*
+  %b6:i8:i32 = add %b5:p0:i32 1:i32
+  j b5(%b6:i8:i32)
+block b8:
+  %b8:i0:i32* = getelementptr @graph_dijkstra_dist:[2000 x i32]* offset 0:i32
+  %b8:i1:i32* = getelementptr %b8:i0:i32* offset 0:i64
+  %b8:i2:unit = store 0:i32 %b8:i1:i32*
+  j b10(0:i32)
+block b10:
+  %b10:p0:i32:step
+  %b10:i0:u1 = cmp lt %b10:p0:i32 %b0:p0:i32
+  br %b10:i0:u1, b15(%b2:i3:i32, 0:i32), b49(0:i32, 0:i32)
+block b15:
+  %b15:p0:i32:v
+  %b15:p1:i32:i
+  %b15:i0:u1 = cmp lt %b15:p1:i32 %b0:p0:i32
+  br %b15:i0:u1, b16(), b55()
+block b16:
+  %b16:i0:i64 = typecast %b15:p1:i32 to i64
+  %b16:i1:i64 = mul %b16:i0:i64 4:i64
+  %b16:i2:i32* = getelementptr %b8:i0:i32* offset %b16:i1:i64
+  %b16:i3:i32 = load %b16:i2:i32*
+  %b16:i4:u1 = cmp ne %b16:i3:i32 %b2:i3:i32
+  br %b16:i4:u1, b22(), b24(0:u1)
+block b17:
+  %b17:p0:i32:v
+  %b17:i0:i32 = add %b15:p1:i32 1:i32
+  j b15(%b17:p0:i32, %b17:i0:i32)
+block b20:
+  %b20:i0:u1 = cmp ne %b15:p0:i32 %b2:i3:i32
+  br %b20:i0:u1, b28(), b30(0:u1)
+block b22:
+  %b22:i0:i32* = getelementptr @graph_dijkstra_visited:[2000 x i32]* offset 0:i32
+  %b22:i1:i32* = getelementptr %b22:i0:i32* offset %b16:i1:i64
+  %b22:i2:i32 = load %b22:i1:i32*
+  %b22:i3:i32 = negate %b22:i2:i32
+  %b22:i4:u1 = cmp ne %b22:i3:i32 0:i32
+  j b24(%b22:i4:u1)
+block b24:
+  %b24:p0:u1:t0
+  %b24:i0:u1 = negate %b24:p0:u1
+  br %b24:i0:u1, b17(%b15:p0:i32), b20()
+block b28:
+  %b28:i0:i64 = typecast %b15:p0:i32 to i64
+  %b28:i1:i64 = mul %b28:i0:i64 4:i64
+  %b28:i2:i32* = getelementptr %b8:i0:i32* offset %b28:i1:i64
+  %b28:i3:i32 = load %b28:i2:i32*
+  %b28:i4:i32 = load %b16:i2:i32*
+  %b28:i5:u1 = cmp lt %b28:i3:i32 %b28:i4:i32
+  j b30(%b28:i5:u1)
+block b30:
+  %b30:p0:u1:t1
+  br %b30:p0:u1, b17(%b15:p0:i32), b17(%b15:p1:i32)
+block b31:
+  br %b55:i0:u1, b31(), b3()
+block b35:
+  %b35:p0:i32:i
+  %b35:i0:u1 = cmp lt %b35:p0:i32 %b0:p0:i32
+  br %b35:i0:u1, b36(), b38()
+block b36:
+  %b36:i0:i64 = typecast %b35:p0:i32 to i64
+  %b36:i1:i64 = mul %b36:i0:i64 4:i64
+  %b36:i2:i32* = getelementptr %b3:i7:i32* offset %b36:i1:i64
+  %b36:i3:i32 = load %b36:i2:i32*
+  %b36:i4:u1 = cmp ne %b36:i3:i32 0:i32
+  br %b36:i4:u1, b37(), b40()
+block b37:
+  %b37:i0:i32 = add %b35:p0:i32 1:i32
+  j b35(%b37:i0:i32)
+block b38:
+  %b38:i0:i32 = add %b10:p0:i32 1:i32
+  j b10(%b38:i0:i32)
+block b40:
+  %b40:i0:i32* = getelementptr %b8:i0:i32* offset %b36:i1:i64
+  %b40:i1:i32 = load %b40:i0:i32*
+  %b40:i2:u1 = cmp ne %b40:i1:i32 %b2:i3:i32
+  br %b40:i2:u1, b45(), b47(0:u1)
+block b43:
+  %b43:i0:i32* = getelementptr %b3:i5:i32* offset %b36:i1:i64
+  %b43:i1:i32 = load %b43:i0:i32*
+  %b43:i2:i32 = add %b3:i6:i32 %b43:i1:i32
+  %b43:i3:unit = store %b43:i2:i32 %b40:i0:i32*
+  j b37()
+block b45:
+  %b45:i0:i32 = load %b40:i0:i32*
+  %b45:i1:i32* = getelementptr %b3:i5:i32* offset %b36:i1:i64
+  %b45:i2:i32 = load %b45:i1:i32*
+  %b45:i3:i32 = add %b3:i6:i32 %b45:i2:i32
+  %b45:i4:u1 = cmp lt %b45:i0:i32 %b45:i3:i32
+  j b47(%b45:i4:u1)
+block b47:
+  %b47:p0:u1:t2
+  br %b47:p0:u1, b37(), b43()
+block b49:
+  %b49:p0:i32:result
+  %b49:p1:i32:i
+  %b49:i0:u1 = cmp lt %b49:p1:i32 %b0:p0:i32
+  br %b49:i0:u1, b50(), b52()
+block b50:
+  %b50:i0:i64 = typecast %b49:p1:i32 to i64
+  %b50:i1:i64 = mul %b50:i0:i64 4:i64
+  %b50:i2:i32* = getelementptr %b8:i0:i32* offset %b50:i1:i64
+  %b50:i3:i32 = load %b50:i2:i32*
+  %b50:i4:i32 = add %b49:p0:i32 %b50:i3:i32
+  %b50:i5:i32 = add %b49:p1:i32 1:i32
+  j b49(%b50:i4:i32, %b50:i5:i32)
+block b52:
+  ret %b49:p0:i32
+block b55:
+  %b55:i0:u1 = cmp eq %b15:p0:i32 %b2:i3:i32
+  br %b55:i0:u1, b31(), b3()
+}
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:i0:u64 = call @clock:[ret:u64 params:()]*()
+  %b0:i1:i32 = call @graph_dijkstra:[ret:i32 params:(i32, i32)]*(2000:i32, 10:i32)
+  %b0:i2:u64 = call @clock:[ret:u64 params:()]*()
+  %b0:i3:u64 = sub %b0:i2:u64 %b0:i0:u64
+  %b0:i4:unit = call @printf:[ret:unit params:(i8*, u64)]*("%d":i8*, %b0:i3:u64)
+  ret %b0:i1:i32
+}

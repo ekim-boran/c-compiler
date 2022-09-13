@@ -1,0 +1,9 @@
+var i32 @nonce = 12
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:i0:i32 = load @nonce:i32*
+  ret %b0:i0:i32
+}

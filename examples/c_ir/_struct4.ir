@@ -1,0 +1,46 @@
+struct Temp : { a:i32, b:i32, next:struct Temp* }
+fun unit @foo (struct Temp*, struct Temp*) {
+init:
+  bid: b0
+  allocations:
+    %l0:struct Temp:a
+block b0:
+  %b0:p0:struct Temp*:a
+  %b0:p1:struct Temp*
+  %b0:i0:unit = call @memcpy:[ret:unit params:(struct Temp*, struct Temp*, i32)]*(%l0:struct Temp*, %b0:p0:struct Temp*, 16:i32)
+  %b0:i1:i32* = getelementptr %l0:struct Temp* offset 0:i64
+  %b0:i2:unit = store 11:i32 %b0:i1:i32*
+  %b0:i3:i32* = getelementptr %l0:struct Temp* offset 4:i64
+  %b0:i4:unit = store 12:i32 %b0:i3:i32*
+  %b0:i5:unit = call @memcpy:[ret:unit params:(struct Temp*, struct Temp*, i32)]*(%b0:p1:struct Temp*, %l0:struct Temp*, 16:i32)
+  ret unit:unit
+}
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+    %l0:struct Temp:t
+    %l1:struct Temp:x
+    %l2:struct Temp:c
+    %l3:struct Temp:t3
+    %l4:struct Temp:t4
+block b0:
+  %b0:i0:i32* = getelementptr %l0:struct Temp* offset 0:i64
+  %b0:i1:unit = store 111:i32 %b0:i0:i32*
+  %b0:i2:i32* = getelementptr %l0:struct Temp* offset 4:i64
+  %b0:i3:unit = store 2:i32 %b0:i2:i32*
+  %b0:i4:unit = call @foo:[ret:unit params:(struct Temp*, struct Temp*)]*(%l0:struct Temp*, %l3:struct Temp*)
+  %b0:i5:unit = call @memcpy:[ret:unit params:(struct Temp*, struct Temp*, i32)]*(%l1:struct Temp*, %l3:struct Temp*, 16:i32)
+  %b0:i6:i32* = getelementptr %l2:struct Temp* offset 0:i64
+  %b0:i7:unit = store 1221:i32 %b0:i6:i32*
+  %b0:i8:i32* = getelementptr %l2:struct Temp* offset 4:i64
+  %b0:i9:unit = store 2:i32 %b0:i8:i32*
+  %b0:i10:struct Temp** = getelementptr %l2:struct Temp* offset 8:i64
+  %b0:i11:unit = store %l0:struct Temp* %b0:i10:struct Temp**
+  %b0:i12:unit = call @foo:[ret:unit params:(struct Temp*, struct Temp*)]*(%l2:struct Temp*, %l4:struct Temp*)
+  %b0:i13:struct Temp** = getelementptr %l4:struct Temp* offset 8:i64
+  %b0:i14:struct Temp* = load %b0:i13:struct Temp**
+  %b0:i15:i32* = getelementptr %b0:i14:struct Temp* offset 0:i64
+  %b0:i16:i32 = load %b0:i15:i32*
+  ret %b0:i16:i32
+}

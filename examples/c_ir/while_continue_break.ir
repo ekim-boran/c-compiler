@@ -1,0 +1,42 @@
+var i32 @nonce = 12
+fun i32 @foo () {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:i0:i32 = load @nonce:i32*
+  %b0:i1:i32 = mod %b0:i0:i32 98:i32
+  %b0:i2:i32 = add %b0:i1:i32 2:i32
+  j b2(0:i32, 0:i32)
+block b2:
+  %b2:p0:i32:sum
+  %b2:p1:i32:i
+  %b2:i0:u1 = cmp lt %b2:p1:i32 100:i32
+  br %b2:i0:u1, b3(), b5(%b2:p0:i32)
+block b3:
+  %b3:i0:u1 = cmp eq %b2:p1:i32 %b0:i1:i32
+  br %b3:i0:u1, b6(), b7()
+block b4:
+  %b4:p0:i32:sum
+  %b4:p1:i32:i
+  j b2(%b4:p0:i32, %b4:p1:i32)
+block b5:
+  %b5:p0:i32:sum
+  ret %b5:p0:i32
+block b6:
+  %b6:i0:i32 = add %b2:p1:i32 1:i32
+  j b4(%b2:p0:i32, %b6:i0:i32)
+block b7:
+  %b7:i0:i32 = add %b2:p0:i32 %b2:p1:i32
+  %b7:i1:i32 = add %b2:p1:i32 1:i32
+  %b7:i2:u1 = cmp eq %b7:i1:i32 %b0:i2:i32
+  br %b7:i2:u1, b5(%b7:i0:i32), b4(%b7:i0:i32, %b7:i1:i32)
+}
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:i0:i32 = call @foo:[ret:i32 params:()]*()
+  ret %b0:i0:i32
+}

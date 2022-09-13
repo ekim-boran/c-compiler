@@ -1,0 +1,16 @@
+var i32 @k = 11
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:i0:i32 = load @k:i32*
+  %b0:i1:i32 = add 1:i32 %b0:i0:i32
+  switch %b0:i1:i32 default b1(14:i32) [
+    0:i32 b1(12:i32)
+    1:i32 b1(13:i32)
+  ]
+block b1:
+  %b1:p0:i32:b
+  ret %b1:p0:i32
+}

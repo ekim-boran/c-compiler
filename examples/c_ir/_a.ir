@@ -1,0 +1,38 @@
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+block b0:
+  j b2(0:i32, 0:i32)
+block b2:
+  %b2:p0:i32:result
+  %b2:p1:i32:i
+  %b2:i0:u1 = cmp lt %b2:p1:i32 10:i32
+  br %b2:i0:u1, b3(), b5()
+block b3:
+  %b3:i0:u1 = cmp eq %b2:p1:i32 4:i32
+  br %b3:i0:u1, b4(%b2:p0:i32), b10(%b2:p0:i32, 0:i32)
+block b4:
+  %b4:p0:i32:result
+  %b4:i0:i32 = add %b2:p1:i32 1:i32
+  j b2(%b4:p0:i32, %b4:i0:i32)
+block b5:
+  ret %b2:p0:i32
+block b10:
+  %b10:p0:i32:result
+  %b10:p1:i32:j
+  %b10:i0:u1 = cmp lt %b10:p1:i32 10:i32
+  br %b10:i0:u1, b11(), b4(%b10:p0:i32)
+block b11:
+  %b11:i0:i32 = add %b2:p1:i32 %b10:p1:i32
+  %b11:i1:i32 = add %b10:p0:i32 %b11:i0:i32
+  %b11:i2:u1 = cmp eq %b11:i0:i32 3:i32
+  br %b11:i2:u1, b14(), b16(%b11:i1:i32)
+block b14:
+  %b14:i0:i32 = add %b11:i1:i32 %b11:i0:i32
+  j b16(%b14:i0:i32)
+block b16:
+  %b16:p0:i32:result
+  %b16:i0:i32 = add %b10:p1:i32 1:i32
+  j b10(%b16:p0:i32, %b16:i0:i32)
+}

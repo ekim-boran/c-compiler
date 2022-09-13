@@ -1,0 +1,106 @@
+struct A : { a:i8, data:i32, node:struct Node }
+struct Node : { w:i8, data:i32, data2:i32, next:struct Node* }
+struct T : { a:i8, b:i32, z:struct Z }
+struct X : { a:i8, b:i32 }
+struct Y : { a:i8, b:i32, x:struct X }
+struct Z : { a:i8, b:i32, y:struct Y }
+fun i32 @foo (struct T*) {
+init:
+  bid: b0
+  allocations:
+    %l0:struct T:t
+block b0:
+  %b0:p0:struct T*:t
+  %b0:i0:unit = call @memcpy:[ret:unit params:(struct T*, struct T*, i32)]*(%l0:struct T*, %b0:p0:struct T*, 32:i32)
+  %b0:i1:struct Z* = getelementptr %l0:struct T* offset 8:i64
+  %b0:i2:struct Y* = getelementptr %b0:i1:struct Z* offset 8:i64
+  %b0:i3:struct X* = getelementptr %b0:i2:struct Y* offset 8:i64
+  %b0:i4:i32* = getelementptr %b0:i3:struct X* offset 4:i64
+  %b0:i5:i32 = load %b0:i4:i32*
+  ret %b0:i5:i32
+}
+fun unit @foo2 (struct T*, struct X*) {
+init:
+  bid: b0
+  allocations:
+    %l0:struct T:t
+block b0:
+  %b0:p0:struct T*:t
+  %b0:p1:struct X*
+  %b0:i0:unit = call @memcpy:[ret:unit params:(struct T*, struct T*, i32)]*(%l0:struct T*, %b0:p0:struct T*, 32:i32)
+  %b0:i1:struct Z* = getelementptr %l0:struct T* offset 8:i64
+  %b0:i2:struct Y* = getelementptr %b0:i1:struct Z* offset 8:i64
+  %b0:i3:struct X* = getelementptr %b0:i2:struct Y* offset 8:i64
+  %b0:i4:unit = call @memcpy:[ret:unit params:(struct X*, struct X*, i32)]*(%b0:p1:struct X*, %b0:i3:struct X*, 8:i32)
+  ret unit:unit
+}
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+    %l0:struct X:x
+    %l1:struct Y:y
+    %l2:struct Z:z
+    %l3:struct T:t
+    %l4:struct Node:a
+    %l5:struct Node:b
+    %l6:struct A:a1
+    %l7:struct X:x1
+    %l8:struct X:t9
+block b0:
+  %b0:i0:i8* = getelementptr %l0:struct X* offset 0:i64
+  %b0:i1:unit = store 12:i8 %b0:i0:i8*
+  %b0:i2:i32* = getelementptr %l0:struct X* offset 4:i64
+  %b0:i3:unit = store 123:i32 %b0:i2:i32*
+  %b0:i4:i8* = getelementptr %l1:struct Y* offset 0:i64
+  %b0:i5:unit = store 1:i8 %b0:i4:i8*
+  %b0:i6:i32* = getelementptr %l1:struct Y* offset 4:i64
+  %b0:i7:unit = store 1:i32 %b0:i6:i32*
+  %b0:i8:struct X* = getelementptr %l1:struct Y* offset 8:i64
+  %b0:i9:unit = call @memcpy:[ret:unit params:(struct X*, struct X*, i32)]*(%b0:i8:struct X*, %l0:struct X*, 8:i32)
+  %b0:i10:i8* = getelementptr %l2:struct Z* offset 0:i64
+  %b0:i11:unit = store 3:i8 %b0:i10:i8*
+  %b0:i12:i32* = getelementptr %l2:struct Z* offset 4:i64
+  %b0:i13:unit = store 3:i32 %b0:i12:i32*
+  %b0:i14:struct Y* = getelementptr %l2:struct Z* offset 8:i64
+  %b0:i15:unit = call @memcpy:[ret:unit params:(struct Y*, struct Y*, i32)]*(%b0:i14:struct Y*, %l1:struct Y*, 16:i32)
+  %b0:i16:i8* = getelementptr %l3:struct T* offset 0:i64
+  %b0:i17:unit = store 4:i8 %b0:i16:i8*
+  %b0:i18:i32* = getelementptr %l3:struct T* offset 4:i64
+  %b0:i19:unit = store 4:i32 %b0:i18:i32*
+  %b0:i20:struct Z* = getelementptr %l3:struct T* offset 8:i64
+  %b0:i21:unit = call @memcpy:[ret:unit params:(struct Z*, struct Z*, i32)]*(%b0:i20:struct Z*, %l2:struct Z*, 24:i32)
+  %b0:i22:i8* = getelementptr %l4:struct Node* offset 0:i64
+  %b0:i23:unit = store 1:i8 %b0:i22:i8*
+  %b0:i24:i32* = getelementptr %l4:struct Node* offset 4:i64
+  %b0:i25:unit = store 10:i32 %b0:i24:i32*
+  %b0:i26:i32* = getelementptr %l4:struct Node* offset 8:i64
+  %b0:i27:unit = store 99:i32 %b0:i26:i32*
+  %b0:i28:i8* = getelementptr %l5:struct Node* offset 0:i64
+  %b0:i29:unit = store 1:i8 %b0:i28:i8*
+  %b0:i30:i32* = getelementptr %l5:struct Node* offset 4:i64
+  %b0:i31:unit = store 20:i32 %b0:i30:i32*
+  %b0:i32:i32* = getelementptr %l5:struct Node* offset 8:i64
+  %b0:i33:unit = store 30:i32 %b0:i32:i32*
+  %b0:i34:struct Node** = getelementptr %l5:struct Node* offset 16:i64
+  %b0:i35:unit = store %l4:struct Node* %b0:i34:struct Node**
+  %b0:i36:i8* = getelementptr %l6:struct A* offset 0:i64
+  %b0:i37:unit = store 2:i8 %b0:i36:i8*
+  %b0:i38:i32* = getelementptr %l6:struct A* offset 4:i64
+  %b0:i39:unit = store 11:i32 %b0:i38:i32*
+  %b0:i40:struct Node* = getelementptr %l6:struct A* offset 8:i64
+  %b0:i41:unit = call @memcpy:[ret:unit params:(struct Node*, struct Node*, i32)]*(%b0:i40:struct Node*, %l5:struct Node*, 24:i32)
+  %b0:i42:struct Node** = getelementptr %b0:i40:struct Node* offset 16:i64
+  %b0:i43:struct Node* = load %b0:i42:struct Node**
+  %b0:i44:i32* = getelementptr %b0:i43:struct Node* offset 8:i64
+  %b0:i45:i32 = load %b0:i44:i32*
+  %b0:i46:unit = call @foo2:[ret:unit params:(struct T*, struct X*)]*(%l3:struct T*, %l8:struct X*)
+  %b0:i47:unit = call @memcpy:[ret:unit params:(struct X*, struct X*, i32)]*(%l7:struct X*, %l8:struct X*, 8:i32)
+  %b0:i48:i32 = call @foo:[ret:i32 params:(struct T*)]*(%l3:struct T*)
+  %b0:i49:i32 = add %b0:i48:i32 %b0:i45:i32
+  %b0:i50:i8* = getelementptr %l7:struct X* offset 0:i64
+  %b0:i51:i8 = load %b0:i50:i8*
+  %b0:i52:i32 = typecast %b0:i51:i8 to i32
+  %b0:i53:i32 = add %b0:i49:i32 %b0:i52:i32
+  ret %b0:i53:i32
+}

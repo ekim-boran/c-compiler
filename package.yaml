@@ -1,0 +1,91 @@
+name:                c-compiler
+version:             0.1.0.0
+github:              "githubuser/c-compiler"
+license:             BSD3
+author:              "Author name here"
+maintainer:          "example@example.com"
+copyright:           "2021 Author name here"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/githubuser/c-compiler#readme>
+default-extensions: 
+  - ViewPatterns
+  - MultiParamTypeClasses
+  - OverloadedStrings
+  - RecordWildCards
+  - TupleSections
+
+  - MultiParamTypeClasses 
+  - NoMonomorphismRestriction 
+  - FlexibleInstances
+  - TypeSynonymInstances  
+  - NoMonomorphismRestriction
+  - FlexibleContexts
+  - DeriveFunctor
+  - DeriveFoldable
+  - DeriveTraversable
+  - DeriveAnyClass
+  - TemplateHaskell
+  - StandaloneDeriving
+  - ScopedTypeVariables
+  - GHC2021
+dependencies:
+- base >= 4.7 && < 5
+- language-c
+- bytestring
+- mtl 
+- transformers
+- pretty
+- directory
+- filepath
+- containers
+- attoparsec
+- aeson
+- MissingH
+- lens
+- unordered-containers
+- hashable
+- text
+- fgl
+- extra
+- process
+- array
+- optparse-applicative
+library:
+  source-dirs: src
+
+executables:
+  c-compiler-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    c-sources:           src/PrimOps.cmm
+
+    dependencies:
+    - c-compiler
+
+tests:
+  c-compiler-test:
+    main:                Spec.hs
+    source-dirs:         test
+    c-sources:           src/PrimOps.cmm
+
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - c-compiler

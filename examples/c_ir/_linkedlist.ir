@@ -1,0 +1,48 @@
+struct Node : { data:i32, next:struct Node* }
+fun i32 @main () {
+init:
+  bid: b0
+  allocations:
+block b0:
+  %b0:i0:unit* = call @malloc:[ret:unit* params:(i32)]*(16:i32)
+  %b0:i1:struct Node* = typecast %b0:i0:unit* to struct Node*
+  j b2(%b0:i1:struct Node*, 0:i32)
+block b2:
+  %b2:p0:struct Node*:head1
+  %b2:p1:i32:i
+  %b2:i0:u1 = cmp lt %b2:p1:i32 1000:i32
+  br %b2:i0:u1, b3(), b7(0:i32, %b0:i1:struct Node*)
+block b3:
+  %b3:i0:struct Node** = getelementptr %b2:p0:struct Node* offset 8:i64
+  %b3:i1:unit* = call @malloc:[ret:unit* params:(i32)]*(16:i32)
+  %b3:i2:struct Node* = typecast %b3:i1:unit* to struct Node*
+  %b3:i3:unit = store %b3:i2:struct Node* %b3:i0:struct Node**
+  %b3:i4:i32* = getelementptr %b2:p0:struct Node* offset 0:i64
+  %b3:i5:unit = store %b2:p1:i32 %b3:i4:i32*
+  %b3:i6:struct Node* = load %b3:i0:struct Node**
+  %b3:i7:i32 = add %b2:p1:i32 1:i32
+  j b2(%b3:i6:struct Node*, %b3:i7:i32)
+block b7:
+  %b7:p0:i32:sum
+  %b7:p1:struct Node*:i
+  %b7:i0:struct Node** = getelementptr %b7:p1:struct Node* offset 8:i64
+  %b7:i1:struct Node* = load %b7:i0:struct Node**
+  %b7:i2:u64 = typecast %b7:i1:struct Node* to u64
+  %b7:i3:u1 = cmp ne %b7:i2:u64 0:u64
+  br %b7:i3:u1, b8(), b10()
+block b8:
+  %b8:i0:i32* = getelementptr %b7:p1:struct Node* offset 0:i64
+  %b8:i1:i32 = load %b8:i0:i32*
+  %b8:i2:i32 = add %b7:p0:i32 %b8:i1:i32
+  %b8:i3:struct Node* = load %b7:i0:struct Node**
+  j b7(%b8:i2:i32, %b8:i3:struct Node*)
+block b10:
+  ret %b7:p0:i32
+}
+fun i32 @asd () {
+init:
+  bid: b0
+  allocations:
+block b0:
+  ret 1:i32
+}

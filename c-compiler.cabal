@@ -1,0 +1,215 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           c-compiler
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/c-compiler#readme>
+homepage:       https://github.com/githubuser/c-compiler#readme
+bug-reports:    https://github.com/githubuser/c-compiler/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2021 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/c-compiler
+
+library
+  exposed-modules:
+      Asm.Printer
+      Asm.Types
+      AsmGen.Allocator
+      AsmGen.ConstraintSatisfaction
+      AsmGen.DataFlow
+      AsmGen.Gen
+      AsmGen.Ir
+      AsmGen.Util
+      Graph
+      Ir.Parse
+      Ir.Printer
+      Ir.Types
+      Ir.Utils
+      Irgen.Gen
+      Irgen.GenUtil
+      Irgen.Lib
+      Irgen.Structs
+      Irgen.Util
+      NaiveAsmGen.Gen
+      NaiveAsmGen.Util
+      Opt.Deadcode
+      Opt.Gvn
+      Opt.Loop
+      Opt.Mem2Reg
+      Opt.SimplifyCfg
+      Opt.Util
+      Simplify.Gen
+      Simplify.Types
+      Simplify.Util
+      Tests.Cases
+      Tests.Tests
+      Util
+  other-modules:
+      Paths_c_compiler
+  hs-source-dirs:
+      src
+  default-extensions:
+      ViewPatterns
+      MultiParamTypeClasses
+      OverloadedStrings
+      RecordWildCards
+      TupleSections
+      MultiParamTypeClasses
+      NoMonomorphismRestriction
+      FlexibleInstances
+      TypeSynonymInstances
+      NoMonomorphismRestriction
+      FlexibleContexts
+      DeriveFunctor
+      DeriveFoldable
+      DeriveTraversable
+      DeriveAnyClass
+      TemplateHaskell
+      StandaloneDeriving
+      ScopedTypeVariables
+      GHC2021
+  build-depends:
+      MissingH
+    , aeson
+    , array
+    , attoparsec
+    , base >=4.7 && <5
+    , bytestring
+    , containers
+    , directory
+    , extra
+    , fgl
+    , filepath
+    , hashable
+    , language-c
+    , lens
+    , mtl
+    , optparse-applicative
+    , pretty
+    , process
+    , text
+    , transformers
+    , unordered-containers
+  default-language: Haskell2010
+
+executable c-compiler-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_c_compiler
+  hs-source-dirs:
+      app
+  default-extensions:
+      ViewPatterns
+      MultiParamTypeClasses
+      OverloadedStrings
+      RecordWildCards
+      TupleSections
+      MultiParamTypeClasses
+      NoMonomorphismRestriction
+      FlexibleInstances
+      TypeSynonymInstances
+      NoMonomorphismRestriction
+      FlexibleContexts
+      DeriveFunctor
+      DeriveFoldable
+      DeriveTraversable
+      DeriveAnyClass
+      TemplateHaskell
+      StandaloneDeriving
+      ScopedTypeVariables
+      GHC2021
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  c-sources:
+      src/PrimOps.cmm
+  build-depends:
+      MissingH
+    , aeson
+    , array
+    , attoparsec
+    , base >=4.7 && <5
+    , bytestring
+    , c-compiler
+    , containers
+    , directory
+    , extra
+    , fgl
+    , filepath
+    , hashable
+    , language-c
+    , lens
+    , mtl
+    , optparse-applicative
+    , pretty
+    , process
+    , text
+    , transformers
+    , unordered-containers
+  default-language: Haskell2010
+
+test-suite c-compiler-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_c_compiler
+  hs-source-dirs:
+      test
+  default-extensions:
+      ViewPatterns
+      MultiParamTypeClasses
+      OverloadedStrings
+      RecordWildCards
+      TupleSections
+      MultiParamTypeClasses
+      NoMonomorphismRestriction
+      FlexibleInstances
+      TypeSynonymInstances
+      NoMonomorphismRestriction
+      FlexibleContexts
+      DeriveFunctor
+      DeriveFoldable
+      DeriveTraversable
+      DeriveAnyClass
+      TemplateHaskell
+      StandaloneDeriving
+      ScopedTypeVariables
+      GHC2021
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  c-sources:
+      src/PrimOps.cmm
+  build-depends:
+      MissingH
+    , aeson
+    , array
+    , attoparsec
+    , base >=4.7 && <5
+    , bytestring
+    , c-compiler
+    , containers
+    , directory
+    , extra
+    , fgl
+    , filepath
+    , hashable
+    , language-c
+    , lens
+    , mtl
+    , optparse-applicative
+    , pretty
+    , process
+    , text
+    , transformers
+    , unordered-containers
+  default-language: Haskell2010
