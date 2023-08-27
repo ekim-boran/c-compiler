@@ -20,7 +20,7 @@ import Prelude hiding (dropWhile, takeWhile)
 
 irParser :: Parser TranslationUnit
 irParser = do
-  structs <- (runUntilNoChange (\m -> foldl go m m) . M.fromList) <$> many parseStruct
+  structs <- runUntilNoChange (\m -> foldl go m m) . M.fromList <$> many parseStruct
   vars <- many parseVar
   fns <- many parseFunction
   return $ TranslationUnit (fmap (second $ replaceDType (f structs)) (vars ++ fns)) structs
@@ -38,7 +38,7 @@ parseStruct = do
   name <- takeWhile (not . isSpace)
   word ":"
   xs <- betweenSymbols '{' '}' (sepByChar ',' parseField)
-  return (B8.unpack name, (DStruct (TyStruct (B8.unpack name) xs False (0, 0, []))))
+  return (B8.unpack name, DStruct (TyStruct (B8.unpack name) xs False (0, 0, [])))
   where
     parseField =
       Named Nothing <$> (word "%anon:" *> parseDtype)
@@ -49,7 +49,7 @@ parseStruct = do
 
 whitespace = many1 (satisfy isSpace)
 
-betweenSymbols s e p = word (char s) *> (word p) <* word (char e)
+betweenSymbols s e p = word (char s) *> word p <* word (char e)
 
 word p = skipWhitespace *> p <* skipWhitespace
   where
@@ -57,37 +57,37 @@ word p = skipWhitespace *> p <* skipWhitespace
 
 parseParams = betweenSymbols '(' ')' $ sepByChar ',' parseDtype
 
-sepByChar c parser = (sepBy parser (word (char c)))
+sepByChar c parser = sepBy parser (word (char c))
 
 parseVar :: Parser (String, Declaration)
 parseVar = do
   word $ string "var"
   dtype <- word parseDtype
   name <- word "@" *> takeWhile (not . isSpace)
-  init <- Just <$> (word "=" *> word (parseInit1 dtype)) <|> return Nothing
+  init <- optional (word "=" *> word (parseInit1 dtype))
   return (B8.unpack name, Variable dtype init) -- TODO
 
 parseInit1 (DInt w s _) = char '-' *> betweenSymbols '(' ')' (go (-1)) <|> go 1
   where
-    go c = InitConst <$> (\v -> Int (c * v) w s) <$> decimal
+    go c = InitConst . (\v -> Int (c * v) w s) <$> decimal
 parseInit1 (DFloat w _) = char '-' *> betweenSymbols '(' ')' (go (-1)) <|> go 1
   where
-    go c = InitConst <$> (\v -> Float (c * v) w) <$> double
+    go c = InitConst . (\v -> Float (c * v) w) <$> double
 parseInit1 (DArray d _) = InitList <$> betweenSymbols '{' '}' (sepByChar ',' (parseInit1 d))
-parseInit1 d | d == stringTy = (InitConst . String . B8.unpack) <$> (betweenSymbols '"' '"' (takeWhile (/= '"')))
-parseInit1 (DStruct (TyStruct _ xs _ _)) = InitList <$> (betweenSymbols '{' '}' $ go xs)
+parseInit1 d | d == stringTy = InitConst . String . B8.unpack <$> betweenSymbols '"' '"' (takeWhile (/= '"'))
+parseInit1 (DStruct (TyStruct _ xs _ _)) = InitList <$> betweenSymbols '{' '}' (go xs)
   where
     go [] = return []
     go (x : xs) = do
       a <- parseInit1 (item x)
-      as <- (char ',' *> go xs) <|> return []
+      as <- char ',' *> go xs <|> return []
       return (a : as)
 
 parseFunction :: Parser (String, Declaration)
 parseFunction = word $ do
   (fname, signature) <- parseSignature
   body <- betweenSymbols '{' '}' parseBody
-  return (B8.unpack fname, Function signature (body))
+  return (B8.unpack fname, Function signature body)
   where
     parseSignature :: Parser (B.ByteString, FunctionSignature)
     parseSignature = do
@@ -193,7 +193,7 @@ parseDtype :: Parser Dtype
 parseDtype = parseInner >>= pointer
   where
     pointer d = try (char '*' *> const d) <|> return d
-    const d = (string "const" *> pointer (DPointer d True)) <|> pointer (DPointer d False)
+    const d = string "const" *> pointer (DPointer d True) <|> pointer (DPointer d False)
 
 parseInner :: Parser Dtype
 parseInner =
@@ -204,7 +204,7 @@ parseInner =
     <|> do
       b <- False <$ word "struct" <|> True <$ word "const struct"
       ident <- structIdent
-      return (DStruct (TyStruct (ident) [] b (0, 0, [])))
+      return (DStruct (TyStruct ident [] b (0, 0, [])))
   where
     int s = DInt s True False
     uint s = DInt s False False
@@ -229,7 +229,7 @@ parseConstant = str <|> unit <|> undef <|> int <|> uint <|> float <|> globalvar
     int = (\v s -> Int v s True) <$> decimal <*> (word ":i" *> decimal)
     uint = (\v s -> Int v s False) <$> decimal <*> (word ":u" *> decimal)
     float = Float <$> double <*> (word ":f" *> decimal)
-    str = (String . B8.unpack) <$> ((betweenSymbols '"' '"' (takeWhile (/= '"'))) <* (char ':' *> parseDtype))
+    str = String . B8.unpack <$> (betweenSymbols '"' '"' (takeWhile (/= '"')) <* (char ':' *> parseDtype))
 
     globalvar = GlobalVariable <$> (B8.unpack <$> (word "@" *> takeWhile (/= ':'))) <*> (char ':' *> parseDtype)
 

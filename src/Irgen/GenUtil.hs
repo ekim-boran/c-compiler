@@ -83,7 +83,7 @@ newBlock n =
     return bid
 
 withBlock :: (Compiler m) => BlockId -> m b -> m b
-withBlock bid' f = modify (set bid bid') >> (newBlockScope f)
+withBlock bid' f = modify (set bid bid') >> newBlockScope f
 
 mkName :: (Compiler m) => m String
 mkName = do

@@ -248,7 +248,7 @@ main:
 .main.0:
     call clock
     mv a2,a0
-    li a0,500
+    li a0,1000
     li a1,10
     sd a2,-40(s0)
     call graph_floyd_warshall

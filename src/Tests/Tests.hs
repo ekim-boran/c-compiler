@@ -1,8 +1,6 @@
 module Tests.Tests where
 
 import Asm.Printer
-import AsmGen.Allocator
-import AsmGen.ConstraintSatisfaction
 import AsmGen.Gen (asmGen)
 import Control.Exception
 import Control.Monad
@@ -45,6 +43,28 @@ optimize f d = let d' = f d in (d /= d', d')
 
 runOpt = runOptimization . optimize
 
+testIrGen1 = runTest $ TestConfig "examples/c/" "examples/ir_/" ".c" ".ir" [] ["_one"] id
+
+testIrGen = runTest $ TestConfig "examples/c/" "examples/ir_/" ".c" ".ir" [] [] id
+
+testSimplify1 = runTest $ TestConfig "examples/ir0/" "examples/ir0_out/" ".ir" ".ir" [] ["minus_constant"] (runOpt simplifyCfg)
+
+testSimplify2 = traverse_ runTest $ go <$> configs
+  where
+    go (f, file) = TestConfig "examples/simplify_cfg/" "examples/simplify_cfg_out/" ".input.ir" ".output.ir" [] [file] (runOpt f)
+    configs =
+      [ (constantProp, "const_prop"),
+        (removeUnreachable, "reach"),
+        (mergeBlocks, "merge"),
+        (emptyBlocks, "empty")
+      ]
+
+testMem2Reg = runTest $ TestConfig "examples/ir0/" "examples/ir1_out/" ".ir" ".ir" ["minus_constant"] [] (runOpt mem2Reg)
+
+testLoop = runTest $ TestConfig "examples/ir0/" "examples/ir5/" ".ir" ".ir" [] [] f'
+  where
+    f' = runOpt (licm . deadcode . gvn . mem2Reg . simplifyCfg)
+
 data TestConfig = TestConfig
   { indir :: FilePath,
     outDir :: FilePath,
@@ -55,132 +75,92 @@ data TestConfig = TestConfig
     opt :: TranslationUnit -> TranslationUnit
   }
 
-runProg fileName executable = do
-  let (x, inex) = splitExtension fileName
-  readSource (fileName, x ++ ".ir")
-  readSource (fileName, x ++ ".s")
-  let outName = "./out"
-  _ <- readCreateProcessWithExitCode (proc "riscv64-linux-gnu-gcc" ["-static", x ++ ".s", "-o", outName]) ""
-  return ()
+runGCC input output = do
+  (exitCode, out, err) <- readCreateProcessWithExitCode (proc "riscv64-linux-gnu-gcc" ["-O0", "-static", input, "-o", output]) ""
+  case exitCode of
+    ExitFailure _ -> print err >> error ("GCC failed " ++ input)
+    _ -> return ()
+
+runProgram file = do
+  (exitCode, out, err) <- readCreateProcessWithExitCode (proc "qemu-riscv64-static" [file]) ""
+  let time = fromMaybe (0 :: Int) $ readMaybe out
+  case exitCode of
+    ExitFailure x -> return (time, x)
+    ExitSuccess -> return (time, 0)
+
+produceOutput ir outFile = writeFile outFile $ if outex == ".ir" then render $ write (allOpt ir) else render (write $ asmGen (allOpt ir)) ++ "\n"
   where
-    readSource (fName, outName) = do
-      contents <- B.readFile fName
-      let (_, inex) = splitExtension fName
-      let (_, outex) = splitExtension outName
-      let ir =
-            if inex == ".c"
-              then case parseC contents (initPos fName) of
-                Left e -> error ("c parse error: " ++ fName)
-                (Right r) -> case genTranslUnit r of -- trace (show (() <$ r)) $
-                  Left e -> error $ "translationError error" ++ e
-                  Right r -> r
-              else case parseOnly irParser contents of
-                Left _ -> error "cannot parse ir"
-                Right r -> r
-      let ir' = allOpt ir
-      writeFile outName $ if outex == ".ir" then render $ write $ (ir') else (render $ write $ asmGen ir') ++ "\n"
+    (_, outex) = splitExtension outFile
 
-printMap m = unlines [show k ++ ":" ++ show k' ++ ":" ++ show v' | (k, v) <- M.assocs m, (k', v') <- M.assocs v]
+runCompiler :: FilePath -> FilePath -> Bool -> IO ()
+runCompiler inputFile outFile opt = do
+  ir <- readSourceFile inputFile
+  let ir' = if opt then allOpt ir else ir
+  produceOutput ir' outFile
 
-printMap' m = unlines [show k ++ ":" ++ show v | (k, v) <- M.assocs m]
+readSourceFile fName = do
+  let (_, inex) = splitExtension fName
+  contents <- B.readFile fName
+  let ir =
+        if inex == ".c"
+          then case parseC contents (initPos fName) of
+            Left e -> error ("c parse error: " ++ fName)
+            (Right r) -> case genTranslUnit r of -- trace (show (() <$ r)) $
+              Left e -> error $ "translationError error" ++ e
+              Right r -> r
+          else case parseOnly irParser contents of
+            Left _ -> error "cannot parse ir"
+            Right r -> r
+  return ir
 
-call (TranslationUnit decls _) = traverse_ (go . snd) decls
-  where
-    go (Function _ x) = do
-      let g = (mkGraph $ liveness x)
-      putStrLn (printMap' $ g)
-      putStrLn (printMap $ liveness x)
-      putStrLn (printMap' $ solveCSP g (initialAssignment (allElems (liveness x)) x))
-    go _ = return ()
-
-runTest :: TestConfig -> IO [([Char], [Char])]
-runTest (TestConfig {..}) = do
+getFiles (TestConfig {..}) = do
   dirFiles <- getDirectoryContents indir
-  outFiles <- getDirectoryContents indir
   removeDirectoryRecursive outDir `catch` (\(e :: SomeException) -> pure ())
   createDirectory outDir `catch` (\(e :: SomeException) -> pure ())
   let files =
         sort
-          [ (indir ++ fileName ++ inExtension, outDir ++ fileName ++ outExtension)
+          [ (joinPath [indir, fileName ++ inExtension], joinPath [outDir, fileName ++ outExtension])
             | file <- dirFiles,
               file `notElem` [".", ".."],
-              let (fileName, extension) = span (/= '.') file,
+              let (fileName, extension) = splitExtension file,
               extension == inExtension,
               fileName `notElem` notExecute,
               null onlyExecute || fileName `elem` onlyExecute
           ]
-  traverse_ (readSource opt) files
+  return files
+
+runTest :: TestConfig -> IO [(String, String)]
+runTest t@(TestConfig {..}) = do
+  files <- getFiles t
+  traverse_ readSource files
   return files
   where
-    readSource f (fName, outName) = do
-      print fName
-      contents <- B.readFile fName
-      let (_, inex) = splitExtension fName
+    readSource (fName, outName) = do
+      print $ "compiling: " ++ fName
+      ir <- readSourceFile fName
       let (_, outex) = splitExtension outName
-      let ir =
-            if inex == ".c"
-              then case parseC contents (initPos fName) of
-                Left e -> error ("c parse error: " ++ fName)
-                (Right r) -> case genTranslUnit r of -- trace (show (() <$ r)) $
-                  Left e -> error $ "translationError error" ++ e
-                  Right r -> r
-              else case parseOnly irParser contents of
-                Left _ -> error "cannot parse ir"
-                Right r -> r
-      let ir' = f ir
-      writeFile outName $ if outex == ".ir" then render $ write $ (ir') else (render $ write $ asmGen ir') ++ "\n"
+      writeFile outName $ if outex == ".ir" then render $ write (opt ir) else render (write $ asmGen (opt ir)) ++ "\n"
 
-executeC file = do
-  let fName = "./exe" ++ [last file]
-  (exitCode, a, b) <- readCreateProcessWithExitCode (proc "riscv64-linux-gnu-gcc" ["-O1", "-static", file, "-o", fName]) ""
-  case exitCode of
-    ExitFailure _ -> print b
-    _ -> return ()
-  (exitCode, stdout, _) <- readCreateProcessWithExitCode (proc "qemu-riscv64-static" [fName]) ""
-  let time = fromMaybe (0 :: Int) $ readMaybe stdout
-  case exitCode of
-    ExitSuccess -> return (time, 0)
-    ExitFailure x -> return (time, x)
-
-executeIR file = do
-  (exitCode, stdout, err) <- readCreateProcessWithExitCode (proc "./kecc" ["--irrun", file]) ""
-  case exitCode of
-    ExitSuccess -> return (0, read $ last $ words $ last $ lines stdout)
-    ExitFailure x -> error $ "execution error ir" ++ err
-
-execute file =
-  let (_, extension) = splitExtension file
-   in case extension of
-        ".c" -> executeC file
-        ".s" -> executeC file
-        ".ir" -> executeIR file
-
-executeFiles n xs = replicateM_ n $ traverse_ go xs
+executeFiles = traverse go
   where
     go (s, d) = do
-      print s
-      (tx, x) <- execute s
-      (ty, y) <- execute d
-      when (tx /= 0) $ print ("times: " ++ show tx ++ "-" ++ show ty ++ "-" ++ (show $ (100 * (ty - tx)) `div` tx))
-      print (show x ++ "-" ++ show y)
-      when (x /= y) $ error s
+      let xs = splitPath s
+      (tx, out1) <- runGCC s "out" >> runProgram "out"
+      (ty, out2) <- runGCC d "out" >> runProgram "out"
+      return (s, tx, ty, out1, out2)
 
 allOpt = runOpt (simplifyCfg . licm . deadcode . gvn . mem2Reg)
 
+fill n s = s ++ replicate (n - length s) ' '
+
+printReport xs = do
+  print "Filename             |GCC Output|Output|GCC -O0 Execution Time|Execution Time|% Faster"
+  forM_ xs $ \(s, tx, ty, out1, out2) -> do
+    when (tx /= 0) $ putStrLn $ fill 22 (snd (splitFileName s)) ++ "|" ++ fill 10 (show out1) ++ "|" ++ fill 6 (show out2) ++ "|" ++ fill 22 (show tx) ++ "|" ++ fill 14 (show ty) ++ "|" ++ show (100 * (tx - ty) `div` ty)
+    when (tx == 0) $ putStrLn $ fill 22 (snd (splitFileName s)) ++ "|" ++ fill 10 (show out1) ++ "|" ++ fill 6 (show out2) ++ "|" ++ fill 22 "-" ++ "|" ++ fill 14 "-" ++ "|" ++ fill 30 "-"
+
+testAsm :: IO ()
 testAsm = do
-  _ <- runTest $ TestConfig "examples/c/" "examples/c_ir/" ".c" ".ir" [] [] allOpt
-  files <- runTest $ TestConfig "examples/c/" "examples/c_asm/" ".c" ".s" [] [] allOpt
-  executeFiles 1 files
-  _ <- runTest $ TestConfig "examples/bench/" "examples/bench_ir/" ".c" ".ir" [] [] allOpt
-  files <- runTest $ TestConfig "examples/bench/" "examples/bench_asm/" ".c" ".s" [] [] allOpt
-  executeFiles 1 files
-
--- >>> testAsm
-
-cfgTests :: [(FunctionDefinition -> (Bool, FunctionDefinition), String, String)]
-cfgTests =
-  [ (optimize constantProp, "examples/simplify_cfg", "const_prop"),
-    (optimize removeUnreachable, "examples/simplify_cfg", "reach"),
-    (optimize mergeBlocks, "examples/simplify_cfg", "merge"),
-    (optimize emptyBlocks, "examples/simplify_cfg", "empty")
-  ]
+  files1 <- runTest $ TestConfig "examples/programs/" "examples/programs/asm/" ".c" ".s" [] [] allOpt
+  files2 <- runTest $ TestConfig "examples/bench/" "examples/bench/asm/" ".c" ".s" [] [] allOpt
+  executeFiles (files1 ++ files2) >>= printReport

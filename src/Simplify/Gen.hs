@@ -1,6 +1,5 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE LambdaCase #-}
-{-# LANGUAGE NamedFieldPuns #-}
 
 module Simplify.Gen where
 
@@ -85,7 +84,7 @@ addressOf = concatIndirection . AddressOfExpr
 expression :: (Checker m, Show a) => CExpression a -> m Expr
 expression (CVar i@(Ident name _ _) a) = do
   d <- getType name
-  case (d) of
+  case d of
     d@(DFunction _) -> return $ addressOf $ VarExpr name d
     _ -> return $ IndirectionExpr $ addressOf $ VarExpr name d
 expression (CConst cons) = return $ ConstExpr $ genConstant' cons
@@ -109,7 +108,7 @@ expression (CBinary op e1 e2 a) = checkBinary op e1 e2 a
 expression (CCast decl expr a) = do
   expr' <- expression expr
   d <- parseSingleDecl decl
-  return $ typecast expr' (d)
+  return $ typecast expr' d
 expression (CIndex left right a) = do
   left' <- expression left
   right' <- expression right
@@ -257,7 +256,7 @@ typecast operand dtype = case (getDtype operand, dtype) of
   (DArray inner2 _, DPointer inner1 a) -> GetElementPtr (addressOf operand) (ConstExpr $ Int 0 32 True) dtype
   (_, _) -> CastExpr operand dtype
 
-arithHelper op2 d neg = fromMaybe undefined $ integerCast CMulOp op2 (ConstExpr (Int (if neg then -1 * width d else width d) 64 True))
+arithHelper op2 d neg = fromMaybe undefined $ integerCast CMulOp op2 (ConstExpr (Int (if neg then-1 * width d else width d) 64 True))
 
 pointerArithmeticCast CSubOp op1 op2 = case (getDtype op1, getDtype op2) of
   (a@DInt {}, b@DPointer {}) -> Nothing

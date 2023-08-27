@@ -134,11 +134,10 @@ toStruct (CStruct _ name fields attr _) = do
   case fields of
     Nothing -> lookupDict name _structDecls
     (Just fields) -> do
-      k <- mfix $ \s -> do
+      mfix $ \s -> do
         insertDict name s structDecls
         xs <- fmap fst . concat <$> traverse fromDeclaration fields
         pure $ DStruct (TyStruct name xs False (calculateOffsets1 xs))
-      pure k
 
 toDtype :: (Checker m, Show a) => BaseDtype a -> m Dtype
 toDtype BaseDtype {scalar = Nothing, typedef_name = (Just name), ..} = mkConst is_const <$> lookupDict name _typedefs

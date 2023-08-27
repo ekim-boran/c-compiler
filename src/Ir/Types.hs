@@ -19,7 +19,7 @@ data TranslationUnit = TranslationUnit
 data Initializer = InitConst Constant | InitList [Initializer] deriving (Show, Eq)
 
 data Declaration
-  = Variable {vdtype :: Dtype, initializer :: Maybe (Initializer)}
+  = Variable {vdtype :: Dtype, initializer :: Maybe Initializer}
   | Function {signature :: FunctionSignature, definition :: FunctionDefinition}
   deriving (Show, Eq)
 
@@ -108,12 +108,12 @@ data Dtype
 
 instance Show Dtype where
   show (DUnit a) = "()"
-  show (DInt w isSigned c) = if isSigned then "i" <> (show w) else "u" <> (show w)
-  show (DFloat a b) = "f" <> (show a)
+  show (DInt w isSigned c) = if isSigned then "i" <> show w else "u" <> show w
+  show (DFloat a b) = "f" <> show a
   show (DPointer a b) = "*" <> show a
   show (DArray a b) = "[" ++ show a ++ ";" ++ show b ++ "]"
-  show (DStruct a) = "struct " ++ show (sname a) ++ (show $ size_align_offsets a)
-  show (DFunction (FunctionSignature ret args)) = if null args then "()->" ++ show ret else (intercalate "->" (show <$> args)) ++ "->" ++ show ret
+  show (DStruct a) = "struct " ++ show (sname a) ++ show (size_align_offsets a)
+  show (DFunction (FunctionSignature ret args)) = if null args then "()->" ++ show ret else intercalate "->" (show <$> args) ++ "->" ++ show ret
 
 mkConst :: IsConst -> Dtype -> Dtype
 mkConst x (DUnit b) = DUnit x
@@ -202,7 +202,7 @@ width (DInt i b b3) = byte i
 width (DFloat i b) = byte i
 width (DPointer d b) = 8
 width (DArray d i) = width d * i
-width (DStruct (TyStruct _ (xs) _ ((w, a, offsets)))) = w
+width (DStruct (TyStruct _ xs _ (w, a, offsets))) = w
 width (DFunction _) = 8
 
 align :: Dtype -> Int
@@ -241,12 +241,11 @@ false = Int 0 1 False
 unit = DUnit False
 
 getField :: Dtype -> String -> [(Dtype, Int)]
-getField (DStruct (TyStruct _ xs _ (_, _, offsets))) name = do
-  case xs' of
-    [] -> head noname
-    _ -> xs'
+getField (DStruct (TyStruct _ xs _ (_, _, offsets))) name = case xs' of
+  [] -> head noname
+  _ -> xs'
   where
     xs' = [(d, i) | (Named n d, i) <- zip xs offsets, Just name == n]
-    noname = [(d, i) : getField d name | (Named n d, i) <- zip xs offsets, not $ isJust n, not $ null $ getField d name]
+    noname = [(d, i) : getField d name | (Named n d, i) <- zip xs offsets, isNothing n, not $ null $ getField d name]
 getField (DPointer d _) name = getField d name
 getField _ _ = []

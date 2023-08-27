@@ -64,7 +64,7 @@ unsigned long clock();
 int main()
 {
   unsigned long start_time = clock();
-  int result = graph_floyd_warshall(500, 10);
+  int result = graph_floyd_warshall(1000, 10);
   printf("%d", (clock() - start_time));
   return result;
 }

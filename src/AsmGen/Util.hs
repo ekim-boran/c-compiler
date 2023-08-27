@@ -3,14 +3,20 @@ module AsmGen.Util where
 import Asm.Types (RegisterType, floor')
 import Asm.Types qualified as A
 import AsmGen.Allocator
+import Control.Monad
 import Control.Monad.State
 import Control.Monad.Trans.Maybe
-import Data.Map qualified as M
+import Data.IntMap.Strict qualified as IM
+import Data.List (sortOn)
+import Data.Map.Strict qualified as M
 import Data.Set qualified as S
+import Data.Tuple.Extra (first)
 import Debug.Trace
+import GHC.Arr (array, listArray)
+import GHC.Arr qualified as A
 import Ir.Types
 import Ir.Types qualified as I
-import Util (mapMaybe)
+import Util (mapMaybe, runUntilNoChange, (!!!))
 
 data State = State
   { locations :: M.Map I.RegisterId (Int, I.Dtype),
@@ -33,6 +39,7 @@ getUsed bid index = do
 getRegister key = do
   r <- gets registers
   MaybeT $ return $ M.lookup (Rid key) r
+
 getConstant bid index key = do
   r <- gets registers
   MaybeT $ return $ M.lookup (TempConstant bid index key) r

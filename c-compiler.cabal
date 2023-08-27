@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.35.1.
 --
 -- see: https://github.com/sol/hpack
 
@@ -28,8 +28,6 @@ library
       Asm.Printer
       Asm.Types
       AsmGen.Allocator
-      AsmGen.ConstraintSatisfaction
-      AsmGen.DataFlow
       AsmGen.Gen
       AsmGen.Ir
       AsmGen.Util
@@ -43,8 +41,6 @@ library
       Irgen.Lib
       Irgen.Structs
       Irgen.Util
-      NaiveAsmGen.Gen
-      NaiveAsmGen.Util
       Opt.Deadcode
       Opt.Gvn
       Opt.Loop
@@ -54,7 +50,6 @@ library
       Simplify.Gen
       Simplify.Types
       Simplify.Util
-      Tests.Cases
       Tests.Tests
       Util
   other-modules:

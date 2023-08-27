@@ -47,7 +47,7 @@ mkMem2Reg blocks initbid =
     rCfg = reverseCfg (makeCfg blocks)
     domTree = makeDomTree (makeCfg blocks)
     impromotable = markImpromotable blocks
-    isPromotable loc = S.notMember loc (impromotable)
+    isPromotable loc = S.notMember loc impromotable
 
     promotableStores = M.filterWithKey (\k a -> S.notMember k impromotable) (markStores blocks)
     iteratedDomFrontier = M.map (foldr (wierddfs (frontiers domTree)) S.empty) promotableStores

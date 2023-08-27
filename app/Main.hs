@@ -2,30 +2,24 @@ module Main where
 
 import Data.Semigroup ((<>))
 import Options.Applicative
-import Tests.Tests
+import Tests.Tests (runCompiler)
 
 data Args = Args
   { input :: String,
-    execute :: Bool
+    output :: String,
+    opt :: Bool
   }
   deriving (Show)
 
 args :: Parser Args
 args =
   Args
-    <$> strOption
-      ( short 'c'
-          <> metavar "Source"
-          <> help "Source file"
-      )
-    <*> switch
-      ( long "executable"
-          <> short 'q'
-          <> help "create executable ./out file"
-      )
+    <$> strOption (short 'c' <> metavar "Source" <> help "Source file")
+    <*> strOption (short 'o' <> help "Output executable file if output extension is .ir generates ir else generates assembly")
+    <*> switch (short 'o' <> help "Optimize")
 
 main :: IO ()
-main = execParser opts >>= (\(Args {..}) -> runProg input execute)
+main = execParser opts >>= (\(Args {..}) -> runCompiler input output opt)
   where
     opts =
       info

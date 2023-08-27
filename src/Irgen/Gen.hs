@@ -8,16 +8,6 @@ import Data.Foldable (traverse_)
 import Data.Map qualified as M
 import Data.Maybe (fromMaybe, isJust, mapMaybe)
 import Ir.Types
-import Ir.Types
-  ( Constant (GlobalVariable, Undef, Unit),
-    Dtype (DArray, DFloat, DFunction, DInt, DPointer, DStruct, DUnit),
-    HasDtype (getDtype),
-    Named (Named, item),
-    Operand (Constant),
-    TranslationUnit,
-    getInner,
-    width,
-  )
 import Irgen.GenUtil
 import Irgen.Util
 import Language.C
@@ -38,10 +28,10 @@ tempTo :: T.Initializer -> Initializer
 tempTo (T.InitExpr (T.CastExpr e d)) = tempTo $ T.InitExpr e
 tempTo (T.InitExpr (T.UnaryExpr CMinOp (T.ConstExpr (Int a w b)))) = InitConst (Int (-a) w b)
 tempTo (T.InitExpr (T.UnaryExpr CMinOp (T.ConstExpr (Float a w)))) = InitConst (Float (-a) w)
-tempTo (T.InitExpr (T.ConstExpr (Int a w b))) = InitConst (Int (a) w b)
-tempTo (T.InitExpr (T.ConstExpr (Float a w))) = InitConst (Float (a) w)
-tempTo (T.InitArray d xs) = InitList ((tempTo . snd) <$> xs)
-tempTo (T.InitStruct xs) = InitList ((tempTo . trd) <$> xs)
+tempTo (T.InitExpr (T.ConstExpr (Int a w b))) = InitConst (Int a w b)
+tempTo (T.InitExpr (T.ConstExpr (Float a w))) = InitConst (Float a w)
+tempTo (T.InitArray d xs) = InitList (tempTo . snd <$> xs)
+tempTo (T.InitStruct xs) = InitList (tempTo . trd <$> xs)
   where
     trd (a, b, c) = c
 tempTo x = error (show x)
@@ -199,7 +189,7 @@ genStat (T.SwitchStmt e def cases) = do
   [defId] <- newBlock 1
   withBlock defId $
     case def of
-      Nothing -> commitBlock $ Return $ Constant $ Unit
+      Nothing -> commitBlock $ Return $ Constant Unit
       (Just (T.Case _ stats)) -> traverse_ genStat stats
   xs <- forM cases $ \(T.Case (Just constant) stats) -> do
     [block] <- newBlock 1

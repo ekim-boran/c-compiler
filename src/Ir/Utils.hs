@@ -26,20 +26,20 @@ neigbours (Switch o def xs) = jbid def : fmap (jbid . snd) xs
 neigbours (Return o) = []
 neigbours Unreachable = []
 
-foldOperands f acc = M.foldl' (foldl f) acc
+foldOperands f = M.foldl' (foldl f)
 
 foldInstructions :: (BlockId -> Int -> Instruction -> a -> a) -> a -> M.Map BlockId Block -> a
-foldInstructions f acc blocks = fst $ foldMapInstructions (\bid index i acc -> (i,) (f bid index i acc)) acc blocks
+foldInstructions f acc blocks = fst $ foldMapInstructions (\bid index i acc -> (i, f bid index i acc)) acc blocks
 
 mapInstructions :: (BlockId -> Int -> Instruction -> Instruction) -> M.Map BlockId Block -> M.Map BlockId Block
-mapInstructions f blocks = snd $ foldMapInstructions (\bid index i acc -> (,acc) (f bid index i)) [] blocks
+mapInstructions f blocks = snd $ foldMapInstructions (\bid index i acc -> (f bid index i, acc)) [] blocks
 
 foldMapInstructions :: (BlockId -> Int -> Instruction -> a -> (Instruction, a)) -> a -> M.Map BlockId Block -> (a, M.Map BlockId Block)
 foldMapInstructions f acc blocks =
   M.mapAccumWithKey go acc blocks
   where
     go acc bid (Block {..}) =
-      let (is, a) = foldl (\(xs, acc) (i, instr) -> first (: xs) (f bid i instr acc)) ([], acc) $ zip [0 ..] (instructions)
+      let (is, a) = foldl (\(xs, acc) (i, instr) -> first (: xs) (f bid i instr acc)) ([], acc) $ zip [0 ..] instructions
        in (a, Block phinodes (reverse is) exit)
 
 applyOp' f x = runIdentity (applyOp (pure . f) x)
@@ -102,29 +102,28 @@ removeInstructions f bs = replaceOperand (M.fromList replaceMap) blocks'
 
 class ReplaceDtype a where
   replaceDType' :: Int -> (Dtype -> Dtype) -> a -> a
-  replaceDType' d f a = replaceDType f a
   replaceDType :: (Dtype -> Dtype) -> a -> a
-  replaceDType f a = replaceDType' 1 f a -- structs are recursive so we specify depth
+  replaceDType' d = replaceDType
+  replaceDType = replaceDType' 1 -- structs are recursive so we specify depth
 
 instance ReplaceDtype Declaration where
-  replaceDType f (Variable dtype init) = (Variable (replaceDType f dtype) init)
+  replaceDType f (Variable dtype init) = Variable (replaceDType f dtype) init
   replaceDType f (Function s (FunctionDefinition {..})) =
     let (DFunction s') = replaceDType f (DFunction s)
-     in Function s' ((FunctionDefinition (fmap (replaceDType f) <$> allocations) (M.map (replaceDType f) blocks) bid_init))
+     in Function s' (FunctionDefinition (fmap (replaceDType f) <$> allocations) (M.map (replaceDType f) blocks) bid_init)
 
 instance ReplaceDtype Dtype where
-  replaceDType' n f a@(DStruct (_)) | n == 0 = f $ a
+  replaceDType' n f a@(DStruct _) | n == 0 = f a
   replaceDType' n f a@(DStruct (TyStruct {..})) =
-    f $
-      (DStruct (TyStruct sname (fmap (replaceDType' (n - 1) f) <$> fields) is_sconst size_align_offsets))
+    f (DStruct (TyStruct sname (fmap (replaceDType' (n - 1) f) <$> fields) is_sconst size_align_offsets))
   replaceDType' n f (DPointer d x) = f $ DPointer (replaceDType' n f d) x
   replaceDType' n f (DArray d x) = f $ DArray (replaceDType' n f d) x
-  replaceDType' n f (DFunction (FunctionSignature ret xs)) = f $ DFunction $ (FunctionSignature (replaceDType f ret) (replaceDType f <$> xs))
+  replaceDType' n f (DFunction (FunctionSignature ret xs)) = f $ DFunction (FunctionSignature (replaceDType f ret) (replaceDType f <$> xs))
   replaceDType' n f d = d
 
 instance ReplaceDtype Operand where
   replaceDType f (Register rid d) = Register rid $ replaceDType f d
-  replaceDType f (Constant (GlobalVariable a d)) = (Constant (GlobalVariable a (replaceDType f d)))
+  replaceDType f (Constant (GlobalVariable a d)) = Constant (GlobalVariable a (replaceDType f d))
   replaceDType f x = x
 
 instance ReplaceDtype Instruction where
@@ -134,7 +133,7 @@ instance ReplaceDtype Instruction where
   replaceDType f b@Store {..} = fmap (replaceDType f) b
   replaceDType f b@Load {..} = fmap (replaceDType f) b
   replaceDType f b@Call {..} =
-    let calee' = (replaceDType f) callee
+    let calee' = replaceDType f callee
         args' = fmap (replaceDType f) args
      in case getDtype calee' of
           (DPointer (DFunction FunctionSignature {..}) _) -> Call calee' args' ret
@@ -146,4 +145,4 @@ instance ReplaceDtype Block where
   replaceDType f a@(Block {..}) = Block (fmap (replaceDType f) <$> phinodes) (replaceDType f <$> instructions) (replaceDType f exit)
 
 instance ReplaceDtype BlockExit where
-  replaceDType f a = fmap (replaceDType f) a
+  replaceDType f = fmap (replaceDType f)

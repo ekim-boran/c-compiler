@@ -18,7 +18,7 @@ import Language.C
 import Numeric (showHex)
 
 p :: I.TranslationUnit -> I.TranslationUnit
-p (I.TranslationUnit decls xs) = I.TranslationUnit ((fmap (second go)) decls) xs
+p (I.TranslationUnit decls xs) = I.TranslationUnit (fmap (second go) decls) xs
   where
     go (I.Function s (I.FunctionDefinition allocs blocks bid)) = I.Function s (I.FunctionDefinition allocs (preProcess blocks) bid)
     go x = x
@@ -38,10 +38,10 @@ asmGen' (I.TranslationUnit decls structs) = flip evalState emptyState $ do
       s <- funGen name sig def
       return [s]
     fgen (name, I.Variable ty init) = return []
-    vgen (name, I.Variable ty init) = return [(varGen name ty init)]
+    vgen (name, I.Variable ty init) = return [varGen name ty init]
     vgen _ = return []
 
-varGen :: Label -> I.Dtype -> Maybe (I.Initializer) -> Section Variable
+varGen :: Label -> I.Dtype -> Maybe I.Initializer -> Section Variable
 varGen name ty init = Section [DGlobl name, DSection SData] (Variable name (initGen ty init))
   where
     initGen ty (Just init) = go ty init
@@ -59,7 +59,7 @@ funGen name (FunctionSignature {..}) funDef@(I.FunctionDefinition {..}) = do
   zipWithM_ (storeLoc . I.Local) [0 ..] (I.item <$> allocations) -- reserve allocations
   let funLocs = foldInstructions f [] blocks
   xs <- traverse (uncurry getUsed) funLocs
-  let maxLoc = maximum $ (0 : (fmap length xs))
+  let maxLoc = maximum (0 : fmap length xs)
   modify (\s -> s {top = top s + maxLoc * 8})
 
   init' <- traverse blockGen (M.toList initialBlock)
@@ -76,7 +76,7 @@ blockGen (bid, I.Block phis instrs exit) = do
   name <- getLabel bid
   phiInstrs <- movePhis bid phis
   instrs' <- concat <$> traverse (instrGen bid) (zip [0 ..] instrs)
-  exits' <- test <$> (execute $ exitGen bid (length instrs) exit)
+  exits' <- test <$> execute (exitGen bid (length instrs) exit)
   return $ Block (Just name) (phiInstrs ++ instrs' ++ exits')
 
 movePhis bid phis = concat <$> traverse f (zip [0 ..] phis)
@@ -88,11 +88,11 @@ movePhis bid phis = concat <$> traverse f (zip [0 ..] phis)
 
 test (Pseudo (Li regx value) : Pseudo (Mv target regy) : xs) | regx == regy = Pseudo (Li target value) : test xs
 test (Pseudo (Li regx value) : (RType (Add datasize') out reg1 (Just regy)) : xs)
-  | regx == regy = [IType (Addi Nothing) out reg1 (Value (value))] ++ test xs
+  | regx == regy = IType (Addi Nothing) out reg1 (Value value) : test xs
 test (x : xs) = x : test xs
 test x = x
 
-exitGen :: I.BlockId -> Int -> (MonadState State m) => I.BlockExit -> MaybeT m [Instruction]
+exitGen :: (MonadState State m) => I.BlockId -> Int -> I.BlockExit -> MaybeT m [Instruction]
 exitGen bid index (I.Jump arg) = do
   (label, instrs) <- argGen bid index arg
   return $ instrs ++ [Pseudo (J label)]
@@ -103,12 +103,12 @@ exitGen bid index (I.ConditionalJump a arg1 arg2) = do
   return $ instrs2 ++ l3 ++ [BType Beq reg Zero label2] ++ instrs1 ++ [Pseudo (J label1)]
 exitGen bid index (I.Switch op def args) = do
   (l1, r) <- load bid index op
-  is <- forM args $ \((I.Int v _ _), arg) -> do
+  is <- forM args $ \(I.Int v _ _, arg) -> do
     let a = li (Arg RInteger 6) v
     (l, i) <- argGen bid index arg
     return $ i ++ a ++ [BType Beq (Arg RInteger 6) r l]
   (l, i) <- argGen bid index def
-  return $ l1 ++ (concat is) ++ i ++ [Pseudo (J l)]
+  return $ l1 ++ concat is ++ i ++ [Pseudo (J l)]
 exitGen bid index (I.Return op) = do
   (l1, r) <- load bid index op
   let l2 = move (reg 0 (I.getDtype op)) r (I.getDtype op)
@@ -127,11 +127,11 @@ argGen bid1 index1 (I.JumpArg bid arg) = do
       return $ l1 ++ l2
 
 saveRestore bid index regs = do
-  ret <- maybeToList <$> (runMaybeT $ getRegister (I.Temp bid index))
+  ret <- maybeToList <$> runMaybeT (getRegister (I.Temp bid index))
   regs' <- filter ((`notElem` (ret ++ regs)) . fst) <$> getUsed bid index
   top' <- gets top
-  let save = (\(i, (r, d)) -> storeInstr r (top' - 8 * i) d) <$> (zip [0 ..] regs')
-  let restore = (\(i, (r, d)) -> loadInstr r (top' - 8 * i) d) <$> (zip [0 ..] regs')
+  let save = (\(i, (r, d)) -> storeInstr r (top' - 8 * i) d) <$> zip [0 ..] regs'
+  let restore = (\(i, (r, d)) -> loadInstr r (top' - 8 * i) d) <$> zip [0 ..] regs'
   return (save, restore)
 
 instrGen :: (MonadState State m) => I.BlockId -> (Int, I.Instruction) -> m [Instruction]
@@ -164,14 +164,14 @@ instrGen bid (index, instr) = test <$> execute (go instr)
       return $ l1 ++ [IType (Load size signed) reg1 reg0 (Value 0)]
     go (I.Call (I.Constant (I.GlobalVariable name d)) args return_type) = do
       reg0 <- getReg
-      xs <- traverse (loadReg) $ args
+      xs <- traverse loadReg args
       (l1, l2) <- saveRestore bid index (snd <$> xs)
-      return $ l1 ++ concat (fst <$> xs) ++ [Pseudo (Call name)] ++ l2
+      return $ l1 ++ concatMap fst xs ++ [Pseudo (Call name)] ++ l2
     go (I.Call r args return_type) = do
-      xs <- traverse (loadReg) $ args
+      xs <- traverse loadReg args
       (l3, reg1) <- loadReg r
       (l1, l2) <- saveRestore bid index (reg1 : (snd <$> xs))
-      return $ l1 ++ concat (fst <$> xs) ++ l3 ++ [Pseudo (Jalr reg1)] ++ l2
+      return $ l1 ++ concatMap fst xs ++ l3 ++ [Pseudo (Jalr reg1)] ++ l2
     go (I.GetElementPtr ptr offset dtype) = do
       reg0 <- getReg
       (l1, reg1) <- loadReg ptr
@@ -185,25 +185,25 @@ instrGen bid (index, instr) = test <$> execute (go instr)
       return $ l1 ++ inst
 
 load :: MonadState State m => I.BlockId -> Int -> I.Operand -> MaybeT m ([Instruction], Register)
-load bid index (I.Constant (I.Int value width signed)) = return $ (li (Arg RInteger 6) value, (Arg RInteger 6))
+load bid index (I.Constant (I.Int value width signed)) = return (li (Arg RInteger 6) value, Arg RInteger 6)
 load bid index (I.Constant (I.Float value width)) = do
   name <- addDecl (genGlobalDirective width (getFloatRepr width value))
-  let reg = (Arg RFloatingPoint 7)
-  let temp = (Arg RInteger 7)
+  let reg = Arg RFloatingPoint 7
+  let temp = Arg RInteger 7
   let instrs = la temp name ++ loadValue temp reg 0 (I.DFloat width False)
   return (instrs, reg)
 load bid index (I.Constant (I.String s)) = do
   name <- addDecl (DAscii s)
   let instrs = la (Arg RInteger 7) name
-  return (instrs, (Arg RInteger 7))
-load bid index (I.Constant (I.Unit)) = return $ (li (Arg RInteger 6) 0, (Arg RInteger 6))
-load bid index (I.Constant (I.Undef _)) = return $ (li (Arg RInteger 6) 0, (Arg RInteger 6))
-load bid index (I.Constant (I.GlobalVariable label d)) = return $ (la (Arg RInteger 7) label, (Arg RInteger 7))
+  return (instrs, Arg RInteger 7)
+load bid index (I.Constant I.Unit) = return (li (Arg RInteger 6) 0, Arg RInteger 6)
+load bid index (I.Constant (I.Undef _)) = return (li (Arg RInteger 6) 0, Arg RInteger 6)
+load bid index (I.Constant (I.GlobalVariable label d)) = return (la (Arg RInteger 7) label, Arg RInteger 7)
 load bid index i@(I.Register rid@(I.Local {}) dtype) = do
   (addr, dtype') <- getLoc rid dtype
   let x
-        | dtype == dtype' = (loadValue s0 (reg 7 dtype) addr dtype, (reg 7 dtype))
-        | I.getInner dtype == dtype' = (loadAddr s0 ((Arg RInteger 7)) addr, (Arg RInteger 7))
+        | dtype == dtype' = (loadValue s0 (reg 7 dtype) addr dtype, reg 7 dtype)
+        | I.getInner dtype == dtype' = (loadAddr s0 (Arg RInteger 7) addr, Arg RInteger 7)
   return x
 load bid index i@(I.Register rid dtype) = ([],) <$> getRegister rid
 

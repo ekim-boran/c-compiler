@@ -14,5 +14,5 @@ import Simplify.Types qualified as T
 genTranslUnit :: CTranslUnit -> Either String TranslationUnit
 genTranslUnit t@(CTranslUnit defs _) = do
   (T.TranslationUnit decls structs) <- T.checkTu t
-  (TranslationUnit decls structs) <- evalStateT (TranslationUnit <$> (concat <$> traverse genExtDecl decls) <*> pure (structs)) emptyFunContext
-  return $ (TranslationUnit (fmap (processStruct) decls) structs)
+  (TranslationUnit decls structs) <- evalStateT (TranslationUnit <$> (concat <$> traverse genExtDecl decls) <*> pure structs) emptyFunContext
+  return $ TranslationUnit (fmap processStruct decls) structs
